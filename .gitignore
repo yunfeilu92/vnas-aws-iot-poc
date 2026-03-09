@@ -1,0 +1,26 @@
+# Build
+device-client/target/
+device-client/dependency-reduced-pom.xml
+
+# Credentials — NEVER commit
+certs/
+*.pem
+*.key
+*.crt
+
+# Test artifacts
+downloads/
+
+# OS
+.DS_Store
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+
+# Python
+.venv/
+__pycache__/

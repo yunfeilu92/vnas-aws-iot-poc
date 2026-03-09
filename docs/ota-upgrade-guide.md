@@ -186,16 +186,17 @@ aws iot search-index --query-string "shadow.reported.firmwareVersion:1.0.2"
 
 ```bash
 aws iot create-dynamic-thing-group \
-  --thing-group-name "firmware-v1.0.2" \
+  --thing-group-name "firmware-v1-0-2" \
   --query-string "shadow.reported.firmwareVersion:1.0.2"
 ```
 
+> Thing group name only allows `[a-zA-Z0-9:_-]` — no dots.
 > Devices matching the query are **auto-populated**. When a device updates its Shadow `firmwareVersion`, it automatically leaves this group.
 
 Verify members:
 
 ```bash
-aws iot list-things-in-thing-group --thing-group-name "firmware-v1.0.2"
+aws iot list-things-in-thing-group --thing-group-name "firmware-v1-0-2"
 ```
 
 ## 6. Upload Firmware to S3
@@ -237,7 +238,7 @@ aws s3 cp /tmp/job-document.json "s3://${S3_BUCKET}/jobs/job-firmware-v1.1.0.jso
 ```bash
 aws iot create-job \
   --job-id "ota-upgrade-to-v1.1.0-$(date +%Y%m%d%H%M%S)" \
-  --targets "arn:aws:iot:${AWS_REGION}:${AWS_ACCOUNT_ID}:thinggroup/firmware-v1.0.2" \
+  --targets "arn:aws:iot:${AWS_REGION}:${AWS_ACCOUNT_ID}:thinggroup/firmware-v1-0-2" \
   --document-source "https://s3.${AWS_REGION}.amazonaws.com/${S3_BUCKET}/jobs/job-firmware-v1.1.0.json" \
   --presigned-url-config "{\"roleArn\":\"arn:aws:iam::${AWS_ACCOUNT_ID}:role/${IOT_JOB_ROLE_NAME}\",\"expiresInSec\":3600}" \
   --target-selection SNAPSHOT \
@@ -347,7 +348,7 @@ aws iot cancel-job --job-id <job-id>
 aws iot delete-job --job-id <job-id> --force
 
 # Delete Dynamic Thing Group
-aws iot delete-dynamic-thing-group --thing-group-name "firmware-v1.0.2"
+aws iot delete-dynamic-thing-group --thing-group-name "firmware-v1-0-2"
 ```
 
 ## Notes
