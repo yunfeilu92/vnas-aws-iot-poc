@@ -8,40 +8,37 @@ import software.amazon.awssdk.crt.mqtt.QualityOfService;
 import software.amazon.awssdk.iot.AwsIotMqttConnectionBuilder;
 
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * AWS IoT OTA 客户端核心类。
+ * AWS IoT MQTT 通信层 - 简化版。
  *
  * 职责：
  * - X.509 证书认证建立 MQTT 连接
  * - 订阅 Jobs notify-next 接收 OTA 任务
- * - 解析 Job Document → OtaPackage → 回调 listener
- * - 上报 Job 执行状态（IN_PROGRESS / SUCCEEDED / FAILED）
- * - 更新 Device Shadow reported.firmwareVersion
+ * - 解析 MQTT 消息并委托给 OtaService 处理
+ * - 提供 disconnect() 方法
+ *
+ * 不再负责：
+ * - 升级流程执行（移到 OtaDemo 中）
+ * - 状态上报（移到 OtaService 中）
+ * - 版本管理（移到 OtaService 中）
  */
 public class OtaClient {
 
     private final String thingName;
-    private final OtaListener listener;
+    private final OtaService otaService;
     private final Gson gson = new Gson();
-    private final Path downloadDir;
-    private final AtomicBoolean upgrading = new AtomicBoolean(false);
 
     private AwsIotMqttConnectionBuilder builder;
     private MqttClientConnection connection;
 
     /**
-     * @param thingName   AWS IoT Thing 名称
-     * @param listener    OTA 回调
-     * @param downloadDir 固件下载目录
+     * @param thingName  AWS IoT Thing 名称
+     * @param otaService OTA 业务服务层
      */
-    public OtaClient(String thingName, OtaListener listener, Path downloadDir) {
+    public OtaClient(String thingName, OtaService otaService) {
         this.thingName = thingName;
-        this.listener = listener;
-        this.downloadDir = downloadDir;
+        this.otaService = otaService;
     }
 
     /**
@@ -65,7 +62,10 @@ public class OtaClient {
             System.out.println("[OtaClient] MQTT connected: " + thingName);
 
             // 启动时上报当前版本到 Shadow
-            reportVersion(listener.onQueryVersion());
+            if (otaService.getListener() != null) {
+                String currentVersion = otaService.getListener().onQueryVersion();
+                otaService.reportVersion(currentVersion);
+            }
 
             // 订阅 Jobs notify-next
             subscribeJobNotifications();
@@ -77,18 +77,44 @@ public class OtaClient {
     }
 
     /**
-     * 订阅 $aws/things/{thingName}/jobs/notify-next，接收下一个待执行的 Job。
+     * 订阅 Jobs 相关 topic，接收 Job 通知。
      */
     private void subscribeJobNotifications() throws Exception {
-        String topic = "$aws/things/" + thingName + "/jobs/notify-next";
-
-        connection.subscribe(topic, QualityOfService.AT_LEAST_ONCE, (message) -> {
+        // 订阅 notify-next（接收新 job 创建的被动通知）
+        String notifyTopic = "$aws/things/" + thingName + "/jobs/notify-next";
+        connection.subscribe(notifyTopic, QualityOfService.AT_LEAST_ONCE, (message) -> {
             handleJobNotification(message);
         }).get();
+        System.out.println("[OtaClient] Subscribed to: " + notifyTopic);
 
-        System.out.println("[OtaClient] Subscribed to: " + topic);
+        // 订阅 $next/get/accepted（接收主动查询的响应）
+        String getAcceptedTopic = "$aws/things/" + thingName + "/jobs/$next/get/accepted";
+        connection.subscribe(getAcceptedTopic, QualityOfService.AT_LEAST_ONCE, (message) -> {
+            handleJobNotification(message);
+        }).get();
+        System.out.println("[OtaClient] Subscribed to: " + getAcceptedTopic);
+
+        // 主动请求获取 pending jobs（如果设备连接时已有 job 在队列中）
+        requestPendingJobs();
     }
 
+    /**
+     * 主动请求获取 pending jobs。
+     * 发布到 $aws/things/{thingName}/jobs/$next/get，触发 $next/get/accepted 响应。
+     */
+    private void requestPendingJobs() throws Exception {
+        String topic = "$aws/things/" + thingName + "/jobs/$next/get";
+        String payload = "{}";
+
+        connection.publish(new MqttMessage(topic, payload.getBytes(StandardCharsets.UTF_8),
+                QualityOfService.AT_LEAST_ONCE, false)).get();
+
+        System.out.println("[OtaClient] Requested pending jobs");
+    }
+
+    /**
+     * 处理 Job 通知消息，解析后委托给 OtaService。
+     */
     private void handleJobNotification(MqttMessage message) {
         try {
             String payload = new String(message.getPayload(), StandardCharsets.UTF_8);
@@ -101,107 +127,14 @@ public class OtaClient {
             }
 
             JsonObject execution = root.getAsJsonObject("execution");
-            String jobId = execution.get("jobId").getAsString();
-            JsonObject jobDoc = execution.getAsJsonObject("jobDocument");
 
-            String version = jobDoc.get("version").getAsString();
-            String packageUrl = jobDoc.get("packageUrl").getAsString();
-            String checksum = jobDoc.has("checksum") ? jobDoc.get("checksum").getAsString() : "";
-            String checksumType = jobDoc.has("checksumType") ? jobDoc.get("checksumType").getAsString() : "sha256";
-
-            OtaPackage pkg = new OtaPackage(jobId, version, packageUrl, checksum, checksumType);
-            System.out.println("[OtaClient] New OTA job received: " + pkg);
-
-            listener.onNewPackage(pkg);
+            // 委托给 OtaService 处理
+            otaService.onJobReceived(execution);
 
         } catch (Exception e) {
             System.err.println("[OtaClient] Error handling job notification: " + e.getMessage());
             e.printStackTrace();
         }
-    }
-
-    /**
-     * 执行 OTA 升级：下载固件 → 校验 → 上报状态。
-     * 通常在 listener.onNewPackage() 中调用。
-     * 使用 AtomicBoolean 防止并发升级。
-     */
-    public void startUpgrade(OtaPackage pkg) {
-        if (!upgrading.compareAndSet(false, true)) {
-            System.out.println("[OtaClient] Upgrade already in progress, skipping: " + pkg);
-            return;
-        }
-
-        CompletableFuture.runAsync(() -> {
-            try {
-                // 上报 IN_PROGRESS
-                reportJobStatus(pkg.getJobId(), "IN_PROGRESS", "downloading firmware");
-
-                // 下载固件
-                FirmwareDownloader downloader = new FirmwareDownloader(listener);
-                Path outputPath = downloadDir.resolve("firmware-" + pkg.getVersion() + ".bin");
-                boolean success = downloader.download(pkg, outputPath);
-
-                if (success) {
-                    listener.onProgress(-1, "firmware downloaded and verified, applying...");
-
-                    // 上报 SUCCEEDED + 更新版本
-                    reportJobStatus(pkg.getJobId(), "SUCCEEDED", "upgrade complete");
-                    reportVersion(pkg.getVersion());
-                    listener.onProgress(-1, "succeeded");
-                } else {
-                    reportJobStatus(pkg.getJobId(), "FAILED", "download or checksum failed");
-                    listener.onProgress(-1, "failed: download or checksum failed");
-                }
-
-            } catch (Exception e) {
-                System.err.println("[OtaClient] Upgrade error: " + e.getMessage());
-                try {
-                    reportJobStatus(pkg.getJobId(), "FAILED", e.getMessage());
-                } catch (Exception reportErr) {
-                    System.err.println("[OtaClient] Failed to report error status: " + reportErr.getMessage());
-                }
-                listener.onProgress(-1, "failed: " + e.getMessage());
-            } finally {
-                upgrading.set(false);
-            }
-        });
-    }
-
-    /**
-     * 更新 Device Shadow reported.firmwareVersion。
-     */
-    public void reportVersion(String version) throws Exception {
-        String topic = "$aws/things/" + thingName + "/shadow/update";
-        String payload = "{\"state\":{\"reported\":{\"firmwareVersion\":\"" + version + "\"}}}";
-
-        connection.publish(new MqttMessage(topic, payload.getBytes(StandardCharsets.UTF_8),
-                QualityOfService.AT_LEAST_ONCE, false)).get();
-
-        System.out.println("[OtaClient] Shadow updated: firmwareVersion=" + version);
-    }
-
-    /**
-     * 更新 Job 执行状态。
-     *
-     * @param jobId  Job ID
-     * @param status IN_PROGRESS / SUCCEEDED / FAILED
-     * @param detail 状态详情
-     */
-    public void reportJobStatus(String jobId, String status, String detail) throws Exception {
-        String topic = "$aws/things/" + thingName + "/jobs/" + jobId + "/update";
-
-        JsonObject payload = new JsonObject();
-        payload.addProperty("status", status);
-
-        JsonObject statusDetails = new JsonObject();
-        statusDetails.addProperty("detail", detail);
-        payload.add("statusDetails", statusDetails);
-
-        connection.publish(new MqttMessage(topic,
-                gson.toJson(payload).getBytes(StandardCharsets.UTF_8),
-                QualityOfService.AT_LEAST_ONCE, false)).get();
-
-        System.out.println("[OtaClient] Job " + jobId + " status -> " + status);
     }
 
     /**
