@@ -7,6 +7,9 @@ import software.amazon.awssdk.crt.mqtt.MqttMessage;
 import software.amazon.awssdk.crt.mqtt.QualityOfService;
 
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * AWS IoT MQTT 通信层 - 简化版。
@@ -24,6 +27,7 @@ public class OtaClient {
     private final OtaService otaService;
     private final MqttClientConnection connection;
     private final Gson gson = new Gson();
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     /**
      * @param thingName  AWS IoT Thing 名称
@@ -60,6 +64,7 @@ public class OtaClient {
         // 订阅 notify-next（接收新 job 创建的被动通知）
         String notifyTopic = "$aws/things/" + thingName + "/jobs/notify-next";
         connection.subscribe(notifyTopic, QualityOfService.AT_LEAST_ONCE, (message) -> {
+            System.out.println("[OtaClient] ✨ Received message on notify-next"); // 调试日志
             handleJobNotification(message);
         }).get();
         System.out.println("[OtaClient] Subscribed to: " + notifyTopic);
@@ -73,6 +78,16 @@ public class OtaClient {
 
         // 主动请求获取 pending jobs（如果设备连接时已有 job 在队列中）
         requestPendingJobs();
+
+        // 启动定期轮询（每 60 秒查询一次，作为 notify-next 推送失败的兜底）
+        scheduler.scheduleAtFixedRate(() -> {
+            try {
+                System.out.println("[OtaClient] Polling for pending jobs (scheduled check)...");
+                requestPendingJobs();
+            } catch (Exception e) {
+                System.err.println("[OtaClient] Failed to poll jobs: " + e.getMessage());
+            }
+        }, 60, 60, TimeUnit.SECONDS);
     }
 
     /**
@@ -118,6 +133,7 @@ public class OtaClient {
      * 断开 MQTT 连接。
      */
     public void disconnect() throws Exception {
+        scheduler.shutdown();
         if (connection != null) {
             connection.disconnect().get();
             System.out.println("[OtaClient] Disconnected.");

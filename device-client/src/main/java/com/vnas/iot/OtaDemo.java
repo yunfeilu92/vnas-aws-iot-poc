@@ -25,11 +25,38 @@ import java.util.concurrent.CompletableFuture;
  * - 用户在 onNewPackage() 中完全控制升级流程
  * - 通过 service.reportJobStatus() 主动上报各阶段状态
  * - 通过 service.reportVersion() 上报新版本
+ * - 固件版本持久化到 firmware_version.txt，重启后自动恢复
  */
 public class OtaDemo {
 
-    private static final String CURRENT_VERSION = "1.0.2";
     private static final Path DOWNLOAD_DIR = Paths.get("downloads");
+    private static final Path VERSION_FILE = Paths.get("firmware_version.txt");
+
+    /**
+     * 读取当前固件版本（从文件读取，如果文件不存在则使用默认值）
+     */
+    private static String getCurrentVersion() {
+        try {
+            if (java.nio.file.Files.exists(VERSION_FILE)) {
+                return java.nio.file.Files.readString(VERSION_FILE).trim();
+            }
+        } catch (Exception e) {
+            System.err.println("[Demo] Failed to read version file: " + e.getMessage());
+        }
+        return "1.0.2"; // 默认版本
+    }
+
+    /**
+     * 保存新版本到文件
+     */
+    private static void saveVersion(String version) {
+        try {
+            java.nio.file.Files.writeString(VERSION_FILE, version);
+            System.out.println("[Demo] Version saved to file: " + version);
+        } catch (Exception e) {
+            System.err.println("[Demo] Failed to save version: " + e.getMessage());
+        }
+    }
 
     public static void main(String[] args) throws Exception {
         if (args.length < 5) {
@@ -64,8 +91,9 @@ public class OtaDemo {
 
             @Override
             public String onQueryVersion() {
-                System.out.println("[Demo] Current firmware version: " + CURRENT_VERSION);
-                return CURRENT_VERSION;
+                String currentVersion = getCurrentVersion();
+                System.out.println("[Demo] Current firmware version: " + currentVersion);
+                return currentVersion;
             }
 
             @Override
@@ -74,7 +102,8 @@ public class OtaDemo {
                 System.out.println("[Demo] New firmware package received: " + pkg);
 
                 // ===== 1. 版本检查 =====
-                if (pkg.getVersion().equals(CURRENT_VERSION)) {
+                String currentVersion = getCurrentVersion();
+                if (pkg.getVersion().equals(currentVersion)) {
                     System.out.println("[Demo] Already running target version " + pkg.getVersion());
                     try {
                         service.reportJobStatus(pkg.getJobId(), "SUCCEEDED",
@@ -151,9 +180,14 @@ public class OtaDemo {
                             return;
                         }
 
-                        // 阶段 4: 安装成功
+                        // 阶段 4: 安装成功，保存新版本到文件
                         currentPhase = "completed";
                         System.out.println("[Demo] Firmware installation completed successfully.");
+
+                        // 先保存版本到文件（重启后生效）
+                        saveVersion(pkg.getVersion());
+
+                        // 上报 job 状态
                         service.reportJobStatus(pkg.getJobId(), "SUCCEEDED",
                                 "firmware v" + pkg.getVersion() + " installed successfully, device may reboot");
 
