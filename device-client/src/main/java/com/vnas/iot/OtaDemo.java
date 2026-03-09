@@ -228,13 +228,14 @@ public class OtaDemo {
         // 4. 注册 listener（会自动反向注入 service）
         otaService.setOtaListener(listener);
 
-        // 5. 创建 OtaClient
-        OtaClient client = new OtaClient(thingName, otaService);
+        // 5. 创建 OtaClient（传入 connection）
+        OtaClient client = new OtaClient(thingName, otaService, connection);
 
         // 6. 添加 shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
                 client.disconnect();
+                connection.close();
                 builder.close();
             } catch (Exception e) {
                 System.err.println("Error during disconnect: " + e.getMessage());
@@ -243,7 +244,7 @@ public class OtaDemo {
 
         // 7. 连接
         System.out.println("[Demo] Connecting to " + endpoint + " as " + thingName + "...");
-        client.connect(endpoint, certPath, keyPath, caPath);
+        client.connect();
 
         System.out.println("[Demo] Waiting for OTA job... (Ctrl+C to exit)");
         Thread.currentThread().join();
