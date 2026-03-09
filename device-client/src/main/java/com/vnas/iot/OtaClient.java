@@ -47,6 +47,15 @@ public class OtaClient {
         connection.connect().get();
         System.out.println("[OtaClient] MQTT connected: " + thingName);
 
+        // 注册终态回调：Job 完成后自动请求下一个 pending Job
+        otaService.setOnJobTerminalCallback(() -> {
+            try {
+                requestPendingJobs();
+            } catch (Exception e) {
+                System.err.println("[OtaClient] Failed to request next job after terminal state: " + e.getMessage());
+            }
+        });
+
         // 启动时上报当前版本到 Shadow
         if (otaService.getListener() != null) {
             String currentVersion = otaService.getListener().onQueryVersion();
@@ -112,7 +121,7 @@ public class OtaClient {
             String payload = new String(message.getPayload(), StandardCharsets.UTF_8);
             JsonObject root = gson.fromJson(payload, JsonObject.class);
 
-            // notify-next 的 payload 结构：{ "execution": { "jobId": "...", "jobDocument": {...} } }
+            // notify-next 的 payload 结构：{ "execution": { "jobId": "...", "status": "...", "jobDocument": {...} } }
             if (!root.has("execution") || root.get("execution").isJsonNull()) {
                 System.out.println("[OtaClient] No pending job.");
                 return;
@@ -120,7 +129,24 @@ public class OtaClient {
 
             JsonObject execution = root.getAsJsonObject("execution");
 
-            // 委托给 OtaService 处理
+            // 检查 execution status，跳过已处于终态的 Job（支持 Continuous Job 场景）
+            if (execution.has("status")) {
+                String status = execution.get("status").getAsString();
+                if ("SUCCEEDED".equals(status) || "FAILED".equals(status)
+                        || "REJECTED".equals(status) || "REMOVED".equals(status)
+                        || "CANCELED".equals(status)) {
+                    System.out.println("[OtaClient] Skipping job in terminal state: " + status);
+                    return;
+                }
+                // IN_PROGRESS 状态的 Job 也跳过（可能是上次未完成的，避免重复处理）
+                if ("IN_PROGRESS".equals(status)) {
+                    System.out.println("[OtaClient] Skipping job already IN_PROGRESS (jobId: "
+                            + (execution.has("jobId") ? execution.get("jobId").getAsString() : "unknown") + ")");
+                    return;
+                }
+            }
+
+            // 委托给 OtaService 处理（仅处理 QUEUED 状态的 Job）
             otaService.onJobReceived(execution);
 
         } catch (Exception e) {

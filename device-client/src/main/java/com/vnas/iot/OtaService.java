@@ -27,6 +27,7 @@ public class OtaService {
     private final Gson gson = new Gson();
 
     private OtaListener listener;
+    private Runnable onJobTerminalCallback;
 
     /**
      * @param connection MQTT 连接实例（由 OtaClient 创建并传入）
@@ -54,6 +55,13 @@ public class OtaService {
      */
     public OtaListener getListener() {
         return listener;
+    }
+
+    /**
+     * 设置 Job 进入终态时的回调（供 OtaClient 注册，用于自动请求下一个 Job）。
+     */
+    public void setOnJobTerminalCallback(Runnable callback) {
+        this.onJobTerminalCallback = callback;
     }
 
     /**
@@ -89,6 +97,16 @@ public class OtaService {
                 QualityOfService.AT_LEAST_ONCE, false)).get();
 
         System.out.println("[OtaService] Job " + jobId + " status -> " + status + ": " + detail);
+
+        // Job 进入终态时，通知 OtaClient 请求下一个 pending Job
+        if (isTerminalStatus(status) && onJobTerminalCallback != null) {
+            System.out.println("[OtaService] Job reached terminal state, requesting next pending job...");
+            onJobTerminalCallback.run();
+        }
+    }
+
+    private boolean isTerminalStatus(String status) {
+        return "SUCCEEDED".equals(status) || "FAILED".equals(status) || "REJECTED".equals(status);
     }
 
     /**
