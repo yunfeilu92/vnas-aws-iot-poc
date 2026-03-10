@@ -100,7 +100,7 @@ public class OtaService {
 
         // Job 进入终态时，通知 OtaClient 请求下一个 pending Job
         if (isTerminalStatus(status) && onJobTerminalCallback != null) {
-            System.out.println("[OtaService] Job reached terminal state, requesting next pending job...");
+            System.out.println("[OtaService] Job reached terminal state.");
             onJobTerminalCallback.run();
         }
     }

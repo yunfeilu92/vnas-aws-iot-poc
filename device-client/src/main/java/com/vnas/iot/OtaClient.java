@@ -48,15 +48,8 @@ public class OtaClient {
         connection.connect().get();
         System.out.println("[OtaClient] MQTT connected: " + thingName);
 
-        // 注册终态回调：Job 完成后自动请求下一个 pending Job
-        otaService.setOnJobTerminalCallback(() -> {
-            currentJobId = null;
-            try {
-                requestPendingJobs();
-            } catch (Exception e) {
-                System.err.println("[OtaClient] Failed to request next job after terminal state: " + e.getMessage());
-            }
-        });
+        // Job 进入终态时清除 currentJobId（允许接收下一个 Job）
+        otaService.setOnJobTerminalCallback(() -> currentJobId = null);
 
         // 启动时上报当前版本到 Shadow
         if (otaService.getListener() != null) {
