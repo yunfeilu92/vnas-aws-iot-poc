@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #09051B; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  background-image: url('bg-dark.jpg');
+  background-size: cover;
+}
+.title-bar {
+  padding: 24pt 48pt 16pt 48pt;
+}
+h1 {
+  color: #FFFFFF;
+  font-size: 24pt;
+  margin: 0;
+  font-weight: bold;
+}
+.body-content {
+  display: flex;
+  flex-direction: row;
+  padding: 0 48pt;
+  gap: 20pt;
+  flex: 1;
+}
+.metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 8pt;
+  width: 300pt;
+}
+.metric-row {
+  display: flex;
+  gap: 8pt;
+}
+.metric-card {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 6pt;
+  padding: 14pt 16pt;
+  flex: 1;
+  border-left: 3pt solid #0EEDAF;
+}
+.metric-card h2 {
+  color: #0EEDAF;
+  font-size: 22pt;
+  margin: 0 0 2pt 0;
+  font-weight: bold;
+}
+.metric-card p {
+  color: #9CA3AF;
+  font-size: 9pt;
+  margin: 0;
+}
+.details {
+  flex: 1;
+  padding: 4pt 0 0 8pt;
+}
+.details h3 {
+  color: #FF9900;
+  font-size: 12pt;
+  margin: 0 0 10pt 0;
+  font-weight: bold;
+}
+</style>
+</head>
+<body>
+<div class="title-bar">
+  <h1>Business Scenario</h1>
+</div>
+<div class="body-content">
+  <div class="metrics">
+    <div class="metric-row">
+      <div class="metric-card">
+        <h2>5,000</h2>
+        <p>Connected Vehicles</p>
+      </div>
+      <div class="metric-card">
+        <h2>128 KB</h2>
+        <p>Message Size</p>
+      </div>
+    </div>
+    <div class="metric-row">
+      <div class="metric-card">
+        <h2>1 msg/s</h2>
+        <p>Per Vehicle</p>
+      </div>
+      <div class="metric-card">
+        <h2>2 hrs</h2>
+        <p>Daily Runtime</p>
+      </div>
+    </div>
+    <div class="metric-row">
+      <div class="metric-card">
+        <h2>625 MB/s</h2>
+        <p>Peak Throughput</p>
+      </div>
+      <div class="metric-card">
+        <h2>129 TB</h2>
+        <p>Monthly Volume</p>
+      </div>
+    </div>
+  </div>
+  <div class="details">
+    <h3>Key Characteristics</h3>
+    <ul style="color: #D1D5DB; font-size: 11pt; line-height: 2.0; padding-left: 16pt;">
+      <li>MQTT topic: dt/vehicles/{vin}/telemetry</li>
+      <li>IoT Core MQTT max payload: 128KB</li>
+      <li>Device Shadow limit: 8KB per document</li>
+      <li>Peak: all 5,000 vehicles online</li>
+      <li>Monthly messages: ~1.08 billion</li>
+      <li>Daily data volume: ~4.3 TB</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>

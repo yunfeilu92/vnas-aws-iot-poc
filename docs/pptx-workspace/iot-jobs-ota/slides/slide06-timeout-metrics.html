@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #09051B; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  background-image: url('bg-dark.jpg');
+  background-size: cover;
+}
+.title-bar {
+  padding: 24pt 48pt 16pt 48pt;
+}
+h1 {
+  color: #FFFFFF;
+  font-size: 24pt;
+  margin: 0;
+  font-weight: bold;
+}
+.body-content {
+  display: flex;
+  flex-direction: row;
+  padding: 0 48pt;
+  gap: 20pt;
+  flex: 1;
+}
+.metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 8pt;
+  width: 300pt;
+}
+.metric-row {
+  display: flex;
+  gap: 8pt;
+}
+.metric-card {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 6pt;
+  padding: 14pt 16pt;
+  flex: 1;
+  border-left: 3pt solid #0EEDAF;
+}
+.metric-card h2 {
+  color: #0EEDAF;
+  font-size: 22pt;
+  margin: 0 0 2pt 0;
+  font-weight: bold;
+}
+.metric-card p {
+  color: #9CA3AF;
+  font-size: 9pt;
+  margin: 0;
+}
+.metric-card.orange {
+  border-left-color: #FF9900;
+}
+.metric-card.orange h2 {
+  color: #FF9900;
+}
+.details {
+  flex: 1;
+  padding: 4pt 0 0 8pt;
+}
+.details h3 {
+  color: #FF9900;
+  font-size: 12pt;
+  margin: 0 0 10pt 0;
+  font-weight: bold;
+}
+.detail-item {
+  background: rgba(255,255,255,0.05);
+  border-radius: 4pt;
+  padding: 8pt 12pt;
+  margin: 6pt 0;
+}
+.detail-item h4 {
+  color: #0EEDAF;
+  font-size: 10pt;
+  margin: 0 0 3pt 0;
+  font-weight: bold;
+}
+.detail-item p {
+  color: #D1D5DB;
+  font-size: 9pt;
+  margin: 0;
+  line-height: 1.4;
+}
+</style>
+</head>
+<body>
+<div class="title-bar">
+  <h1>超时机制 (Timeout)</h1>
+</div>
+<div class="body-content">
+  <div class="metrics">
+    <div class="metric-row">
+      <div class="metric-card">
+        <h2>7 天</h2>
+        <p>In-Progress Timer 最大值</p>
+      </div>
+      <div class="metric-card orange">
+        <h2>10,080</h2>
+        <p>分钟（最大超时）</p>
+      </div>
+    </div>
+    <div class="metric-row">
+      <div class="metric-card">
+        <h2>1 分钟</h2>
+        <p>Timer 最小粒度</p>
+      </div>
+      <div class="metric-card orange">
+        <h2>-1</h2>
+        <p>取消当前 Step Timer</p>
+      </div>
+    </div>
+    <div class="metric-row">
+      <div class="metric-card">
+        <h2>2 层</h2>
+        <p>独立超时互相约束</p>
+      </div>
+      <div class="metric-card orange">
+        <h2>Auto</h2>
+        <p>AWS IoT 自动触发</p>
+      </div>
+    </div>
+  </div>
+  <div class="details">
+    <h3>双层超时机制</h3>
+    <div class="detail-item">
+      <h4>In-Progress Timer (任务级别)</h4>
+      <p>创建 Job 时配置 inProgressTimeoutInMinutes。执行进入 IN_PROGRESS 时开始计时，到期后自动设置为 TIMED_OUT 终态。</p>
+    </div>
+    <div class="detail-item">
+      <h4>Step Timer (步骤级别)</h4>
+      <p>通过 UpdateJobExecution 请求中的 stepTimeoutInMinutes 设置。每次更新可重置，但绝对截止不能超过 In-Progress Timer。</p>
+    </div>
+    <div class="detail-item">
+      <h4>约束关系</h4>
+      <p>Step Timer 到期 &#8804; In-Progress Timer 到期。设备可用 stepTimeout=-1 取消 Step Timer 而不影响 In-Progress Timer。</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>

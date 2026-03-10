@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #09051B; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  background-image: url('bg-dark.jpg');
+  background-size: cover;
+}
+.title-bar {
+  padding: 24pt 48pt 10pt 48pt;
+}
+.title-bar h1 {
+  color: #FFFFFF;
+  font-size: 24pt;
+  margin: 0;
+  font-weight: bold;
+}
+.body-content {
+  display: flex;
+  flex-direction: column;
+  padding: 0 48pt;
+  gap: 10pt;
+  flex: 1;
+}
+.section-title {
+  color: #9CA3AF;
+  font-size: 9pt;
+  font-weight: bold;
+  margin: 0 0 6pt 0;
+  letter-spacing: 1pt;
+}
+.comparison-section {
+  display: flex;
+  flex-direction: row;
+  gap: 12pt;
+}
+.option {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 6pt;
+  padding: 10pt 14pt;
+  border-top: 3pt solid #0EEDAF;
+}
+.option.alt {
+  border-top-color: #FF9900;
+}
+.option h3 {
+  color: #0EEDAF;
+  font-size: 12pt;
+  margin: 0 0 8pt 0;
+  font-weight: bold;
+}
+.option.alt h3 {
+  color: #FF9900;
+}
+.feature {
+  display: flex;
+  justify-content: space-between;
+  padding: 4pt 0;
+  border-bottom: 1pt solid rgba(255,255,255,0.08);
+}
+.feature p {
+  font-size: 9pt;
+  margin: 0;
+}
+.feature .label { color: #D1D5DB; }
+.feature .value { color: #FFFFFF; font-weight: bold; }
+.vs-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30pt;
+}
+.vs-divider p {
+  color: #6B7280;
+  font-size: 14pt;
+  font-weight: bold;
+  margin: 0;
+}
+</style>
+</head>
+<body>
+<div class="title-bar">
+  <h1>关键概念对比</h1>
+</div>
+<div class="body-content">
+  <p class="section-title">MQTT TOPIC 模式</p>
+  <div class="comparison-section">
+    <div class="option">
+      <h3>notify-next (被动)</h3>
+      <div class="feature">
+        <p class="label">触发时机</p>
+        <p class="value">Job 创建时自动推送</p>
+      </div>
+      <div class="feature">
+        <p class="label">Topic</p>
+        <p class="value">jobs/notify-next</p>
+      </div>
+      <div class="feature">
+        <p class="label">适用场景</p>
+        <p class="value">设备在线时新建 Job</p>
+      </div>
+    </div>
+    <div class="vs-divider"><p>VS</p></div>
+    <div class="option alt">
+      <h3>$next/get (主动)</h3>
+      <div class="feature">
+        <p class="label">触发时机</p>
+        <p class="value">设备主动发起请求</p>
+      </div>
+      <div class="feature">
+        <p class="label">Topic</p>
+        <p class="value">jobs/$next/get</p>
+      </div>
+      <div class="feature">
+        <p class="label">适用场景</p>
+        <p class="value">设备上线查 pending Job</p>
+      </div>
+    </div>
+  </div>
+
+  <p class="section-title">JOB 类型</p>
+  <div class="comparison-section">
+    <div class="option">
+      <h3>Snapshot (快照)</h3>
+      <div class="feature">
+        <p class="label">目标</p>
+        <p class="value">创建时指定的设备</p>
+      </div>
+      <div class="feature">
+        <p class="label">完成条件</p>
+        <p class="value">所有目标到达终态</p>
+      </div>
+      <div class="feature">
+        <p class="label">推荐场景</p>
+        <p class="value">一次性 OTA 推送</p>
+      </div>
+    </div>
+    <div class="vs-divider"><p>VS</p></div>
+    <div class="option alt">
+      <h3>Continuous (连续)</h3>
+      <div class="feature">
+        <p class="label">目标</p>
+        <p class="value">含后续加入的设备</p>
+      </div>
+      <div class="feature">
+        <p class="label">完成条件</p>
+        <p class="value">endTime 到达才结束</p>
+      </div>
+      <div class="feature">
+        <p class="label">推荐场景</p>
+        <p class="value">持续合规 / 滚动部署</p>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

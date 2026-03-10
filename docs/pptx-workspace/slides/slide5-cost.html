@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #09051B; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  background-image: url('bg-dark.jpg');
+  background-size: cover;
+}
+.title-bar {
+  padding: 24pt 48pt 12pt 48pt;
+}
+.title-bar h1 {
+  color: #FFFFFF;
+  font-size: 24pt;
+  margin: 0;
+  font-weight: bold;
+}
+.body-content {
+  display: flex;
+  flex-direction: row;
+  padding: 0 48pt;
+  gap: 24pt;
+  flex: 1;
+}
+.table-area {
+  flex: 1;
+}
+.table-area h3 {
+  color: #0EEDAF;
+  font-size: 11pt;
+  margin: 0 0 10pt 0;
+  font-weight: bold;
+}
+.chart-area {
+  width: 280pt;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+</style>
+</head>
+<body>
+<div class="title-bar">
+  <h1>Monthly Cost Estimation</h1>
+</div>
+<div class="body-content">
+  <div class="table-area">
+    <h3>Service Breakdown (USD/month)</h3>
+    <div id="cost-table" class="placeholder" style="width: 340pt; height: 260pt; background: rgba(255,255,255,0.03);"></div>
+  </div>
+  <div class="chart-area">
+    <div id="cost-chart" class="placeholder" style="width: 280pt; height: 280pt; background: rgba(255,255,255,0.03);"></div>
+  </div>
+</div>
+</body>
+</html>

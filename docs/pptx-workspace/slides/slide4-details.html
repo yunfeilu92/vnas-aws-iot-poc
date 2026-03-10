@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #09051B; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  background-image: url('bg-dark.jpg');
+  background-size: cover;
+}
+.title-bar {
+  padding: 24pt 48pt 12pt 48pt;
+}
+.title-bar h1 {
+  color: #FFFFFF;
+  font-size: 24pt;
+  margin: 0;
+  font-weight: bold;
+}
+.body-content {
+  display: flex;
+  flex-direction: row;
+  padding: 0 48pt;
+  gap: 24pt;
+  flex: 1;
+}
+.column {
+  flex: 1;
+}
+.section-label {
+  margin: 0 0 8pt 0;
+  padding: 0 0 6pt 0;
+  border-bottom: 2pt solid #0EEDAF;
+}
+.section-label p {
+  color: #0EEDAF;
+  font-size: 11pt;
+  font-weight: bold;
+  margin: 0;
+}
+.service-item {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4pt;
+  padding: 8pt 12pt;
+  margin: 6pt 0;
+}
+.service-item h4 {
+  color: #FF9900;
+  font-size: 11pt;
+  margin: 0 0 3pt 0;
+}
+.service-item p {
+  color: #D1D5DB;
+  font-size: 9pt;
+  margin: 0;
+  line-height: 1.4;
+}
+</style>
+</head>
+<body>
+<div class="title-bar">
+  <h1>Architecture Details</h1>
+</div>
+<div class="body-content">
+  <div class="column">
+    <div class="section-label"><p>Telemetry Data Path (128KB)</p></div>
+    <div class="service-item">
+      <h4>AWS IoT Core</h4>
+      <p>MQTT Broker + Rules Engine<br>Topic: dt/vehicles/{vin}/telemetry<br>128KB msg = 26 billing blocks (5KB each)</p>
+    </div>
+    <div class="service-item">
+      <h4>Amazon MSK (Provisioned)</h4>
+      <p>9x kafka.m5.2xlarge brokers<br>RF=3, cluster I/O ~2,500 MB/s<br>3-day retention, ~40TB storage</p>
+    </div>
+    <div class="service-item">
+      <h4>Managed Apache Flink</h4>
+      <p>32 KPUs for stream processing<br>Transforms and writes to S3 in Parquet</p>
+    </div>
+  </div>
+  <div class="column">
+    <div class="section-label"><p>Storage and Query</p></div>
+    <div class="service-item">
+      <h4>Amazon S3</h4>
+      <p>Parquet format (~50% compression)<br>~64 TB/month (compressed)<br>Partitioned by date/vehicle</p>
+    </div>
+    <div class="service-item">
+      <h4>Amazon Athena</h4>
+      <p>Interactive SQL queries on S3<br>$5/TB scanned<br>Parquet + partitioning reduces cost</p>
+    </div>
+    <div class="section-label" style="margin-top: 8pt;"><p>Vehicle State (low frequency)</p></div>
+    <div class="service-item">
+      <h4>Device Shadow (Named Shadow)</h4>
+      <p>State sync: online status, firmware version<br>Max 8KB per document<br>Not for telemetry data</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>

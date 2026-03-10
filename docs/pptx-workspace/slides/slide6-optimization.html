@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #09051B; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  background-image: url('bg-dark.jpg');
+  background-size: cover;
+}
+.title-bar {
+  padding: 24pt 48pt 12pt 48pt;
+}
+.title-bar h1 {
+  color: #FFFFFF;
+  font-size: 24pt;
+  margin: 0;
+  font-weight: bold;
+}
+.body-content {
+  display: flex;
+  flex-direction: column;
+  padding: 0 48pt;
+  gap: 8pt;
+  flex: 1;
+}
+.opt-row {
+  display: flex;
+  flex-direction: row;
+  gap: 12pt;
+}
+.opt-card {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4pt;
+  padding: 10pt 14pt;
+  border-top: 2pt solid #0EEDAF;
+}
+.opt-card h4 {
+  color: #FFFFFF;
+  font-size: 10pt;
+  margin: 0 0 4pt 0;
+  font-weight: bold;
+}
+.opt-card p {
+  color: #9CA3AF;
+  font-size: 8pt;
+  margin: 0 0 4pt 0;
+  line-height: 1.4;
+}
+.impact {
+  background: rgba(14, 237, 175, 0.12);
+  border-radius: 2pt;
+  padding: 3pt 8pt;
+  display: inline-block;
+  margin-top: 2pt;
+}
+.impact p {
+  color: #0EEDAF;
+  font-size: 8pt;
+  font-weight: bold;
+  margin: 0;
+}
+.summary {
+  background: rgba(255, 153, 0, 0.1);
+  border-left: 3pt solid #FF9900;
+  border-radius: 0 4pt 4pt 0;
+  padding: 10pt 16pt;
+  margin-top: 2pt;
+}
+.summary p {
+  color: #FF9900;
+  font-size: 10pt;
+  margin: 0;
+  font-weight: bold;
+}
+</style>
+</head>
+<body>
+<div class="title-bar">
+  <h1>Cost Optimization Recommendations</h1>
+</div>
+<div class="body-content">
+  <div class="opt-row">
+    <div class="opt-card">
+      <h4>Compress Messages to &lt;5KB</h4>
+      <p>Reduce IoT Core billing blocks from 26 to 1. Use Protocol Buffers or gzip at vehicle edge.</p>
+      <div class="impact"><p>IoT Core: $28K to $1.1K (-96%)</p></div>
+    </div>
+    <div class="opt-card">
+      <h4>Batch Aggregation (10s)</h4>
+      <p>Aggregate 10 messages into 1 batch before publishing. Reduces message count by 10x.</p>
+      <div class="impact"><p>Messages: 1.08B to 108M</p></div>
+    </div>
+    <div class="opt-card">
+      <h4>Off-Peak Scheduling</h4>
+      <p>Stagger vehicle data transmission to reduce peak throughput. Smaller MSK instances.</p>
+      <div class="impact"><p>MSK: smaller broker type</p></div>
+    </div>
+  </div>
+  <div class="opt-row">
+    <div class="opt-card">
+      <h4>S3 Parquet Format</h4>
+      <p>Columnar storage with ~50% compression. Reduces storage cost and Athena scan volume.</p>
+      <div class="impact"><p>Storage: 129TB to ~64TB</p></div>
+    </div>
+    <div class="opt-card">
+      <h4>Athena Partition Strategy</h4>
+      <p>Partition by date and vehicle ID. Use projection for dynamic partition discovery.</p>
+      <div class="impact"><p>Query cost: up to -90%</p></div>
+    </div>
+    <div class="opt-card">
+      <h4>Combined Optimization</h4>
+      <p>Compression + batching can reduce total monthly cost from ~$44K to under $15K.</p>
+      <div class="impact"><p>Total: ~$44K to ~$15K (-66%)</p></div>
+    </div>
+  </div>
+  <div class="summary">
+    <p>Key Insight: Message compression alone saves ~$27K/month. Prioritize vehicle-edge optimizations first.</p>
+  </div>
+</div>
+</body>
+</html>

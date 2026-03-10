@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #09051B; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  background-image: url('bg-dark.jpg');
+  background-size: cover;
+}
+.title-bar {
+  padding: 24pt 48pt 12pt 48pt;
+}
+.title-bar h1 {
+  color: #FFFFFF;
+  font-size: 24pt;
+  margin: 0;
+  font-weight: bold;
+}
+.body-content {
+  display: flex;
+  flex-direction: column;
+  padding: 0 48pt;
+  gap: 8pt;
+  flex: 1;
+}
+.opt-row {
+  display: flex;
+  flex-direction: row;
+  gap: 12pt;
+}
+.opt-card {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4pt;
+  padding: 10pt 14pt;
+  border-top: 2pt solid #0EEDAF;
+}
+.opt-card.orange { border-top-color: #FF9900; }
+.opt-card.red { border-top-color: #FF706E; }
+.opt-card h4 {
+  color: #FFFFFF;
+  font-size: 10pt;
+  margin: 0 0 4pt 0;
+  font-weight: bold;
+}
+.opt-card p {
+  color: #9CA3AF;
+  font-size: 8pt;
+  margin: 0 0 4pt 0;
+  line-height: 1.4;
+}
+.impact {
+  background: rgba(14, 237, 175, 0.12);
+  border-radius: 2pt;
+  padding: 3pt 8pt;
+  display: inline-block;
+  margin-top: 2pt;
+}
+.impact p {
+  color: #0EEDAF;
+  font-size: 8pt;
+  font-weight: bold;
+  margin: 0;
+}
+.summary {
+  background: rgba(255, 153, 0, 0.1);
+  border-left: 3pt solid #FF9900;
+  border-radius: 0 4pt 4pt 0;
+  padding: 10pt 16pt;
+  margin-top: 2pt;
+}
+.summary p {
+  color: #FF9900;
+  font-size: 10pt;
+  margin: 0;
+  font-weight: bold;
+}
+</style>
+</head>
+<body>
+<div class="title-bar">
+  <h1>最佳实践与故障排查</h1>
+</div>
+<div class="body-content">
+  <div class="opt-row">
+    <div class="opt-card">
+      <h4>版本检查去重</h4>
+      <p>收到 Job 时先检查当前版本，已是目标版本则直接上报 SUCCEEDED，避免重复下载安装。</p>
+      <div class="impact"><p>防止重复执行</p></div>
+    </div>
+    <div class="opt-card orange">
+      <h4>双 Topic 订阅</h4>
+      <p>同时订阅 notify-next（被动）和 $next/get（主动查询），确保离线期间创建的 Job 也不遗漏。</p>
+      <div class="impact"><p>100% Job 覆盖</p></div>
+    </div>
+    <div class="opt-card">
+      <h4>Presigned URL 有效期</h4>
+      <p>设置合理过期时间（2-24h）。URL 过期后设备无法下载，需重新创建 Job 或提供 S3 路径。</p>
+      <div class="impact"><p>避免下载 404</p></div>
+    </div>
+  </div>
+  <div class="opt-row">
+    <div class="opt-card red">
+      <h4>故障：未收到 Job</h4>
+      <p>检查是否订阅了 $next/get/accepted topic，并在连接后调用 requestPendingJobs()。</p>
+      <div class="impact"><p>Topic 订阅排查</p></div>
+    </div>
+    <div class="opt-card red">
+      <h4>故障：Checksum 失败</h4>
+      <p>确认 S3 中的固件文件未被覆盖。重新计算 SHA256 并更新 Job Document。</p>
+      <div class="impact"><p>文件完整性</p></div>
+    </div>
+    <div class="opt-card red">
+      <h4>故障：设备未加入 Group</h4>
+      <p>Fleet Index 更新有几秒延迟。检查 Shadow 是否正确上报了 firmwareVersion 字段。</p>
+      <div class="impact"><p>索引延迟排查</p></div>
+    </div>
+  </div>
+  <div class="summary">
+    <p>关键原则：幂等性 + 双模式通知 + SHA256 校验 = 可靠的 OTA 升级流水线</p>
+  </div>
+</div>
+</body>
+</html>

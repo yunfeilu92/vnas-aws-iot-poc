@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #09051B; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  background-image: url('bg-dark.jpg');
+  background-size: cover;
+}
+.title-bar {
+  padding: 24pt 48pt 12pt 48pt;
+}
+.title-bar h1 {
+  color: #FFFFFF;
+  font-size: 24pt;
+  margin: 0;
+  font-weight: bold;
+}
+.body-content {
+  display: flex;
+  flex-direction: row;
+  padding: 0 48pt;
+  gap: 24pt;
+  flex: 1;
+}
+.column { flex: 1; }
+.section-label {
+  margin: 0 0 8pt 0;
+  padding: 0 0 6pt 0;
+  border-bottom: 2pt solid #0EEDAF;
+}
+.section-label p {
+  color: #0EEDAF;
+  font-size: 11pt;
+  font-weight: bold;
+  margin: 0;
+}
+.section-label.alt {
+  border-bottom-color: #FF9900;
+}
+.section-label.alt p {
+  color: #FF9900;
+}
+.service-item {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4pt;
+  padding: 7pt 12pt;
+  margin: 5pt 0;
+}
+.service-item h4 {
+  color: #FF9900;
+  font-size: 10pt;
+  margin: 0 0 2pt 0;
+}
+.service-item p {
+  color: #D1D5DB;
+  font-size: 8.5pt;
+  margin: 0;
+  line-height: 1.3;
+}
+.service-item.green h4 { color: #0EEDAF; }
+.service-item h6 {
+  color: #0EEDAF;
+  font-size: 7.5pt;
+  margin: 2pt 0 0 0;
+  font-weight: normal;
+}
+</style>
+</head>
+<body>
+<div class="title-bar">
+  <h1>云端配置 vs 设备端流程</h1>
+</div>
+<div class="body-content">
+  <div class="column">
+    <div class="section-label"><p>Cloud Side (管理员操作)</p></div>
+    <div class="service-item green">
+      <h4>1. 启用 Fleet Indexing</h4>
+      <p>索引 Device Shadow 的 firmwareVersion 字段</p>
+      <h6>aws iot update-indexing-configuration</h6>
+    </div>
+    <div class="service-item green">
+      <h4>2. 上传固件到 S3</h4>
+      <p>创建 S3 Bucket，上传固件二进制文件</p>
+      <h6>aws s3 cp firmware.bin s3://bucket/</h6>
+    </div>
+    <div class="service-item green">
+      <h4>3. 创建 Dynamic Thing Group</h4>
+      <p>查询：shadow.reported.firmwareVersion:1.0.2</p>
+      <h6>aws iot create-dynamic-thing-group</h6>
+    </div>
+    <div class="service-item green">
+      <h4>4. 创建 IoT Job</h4>
+      <p>指定 target Group + Job Document (Presigned URL + checksum)</p>
+      <h6>aws iot create-job --targets ...</h6>
+    </div>
+  </div>
+  <div class="column">
+    <div class="section-label alt"><p>Device Side (设备自动执行)</p></div>
+    <div class="service-item">
+      <h4>1. MQTT 连接 + 订阅</h4>
+      <p>X.509 证书认证，订阅 jobs/notify-next 和 $next/get/accepted</p>
+    </div>
+    <div class="service-item">
+      <h4>2. 接收 Job 通知</h4>
+      <p>被动推送 (notify-next) 或主动查询 ($next/get)</p>
+    </div>
+    <div class="service-item">
+      <h4>3. 下载 + 校验固件</h4>
+      <p>通过 Presigned URL 下载，SHA256 校验完整性</p>
+    </div>
+    <div class="service-item">
+      <h4>4. 安装 + 重启</h4>
+      <p>写入新固件、更新启动脚本、触发设备重启</p>
+    </div>
+    <div class="service-item">
+      <h4>5. 上报结果 + 更新 Shadow</h4>
+      <p>上报 SUCCEEDED，更新 firmwareVersion，自动离开旧 Group</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>

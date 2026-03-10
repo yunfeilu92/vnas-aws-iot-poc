@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #09051B; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  background-image: url('bg-dark.jpg');
+  background-size: cover;
+}
+.title-bar {
+  padding: 24pt 48pt 6pt 48pt;
+}
+h1 {
+  color: #FFFFFF;
+  font-size: 24pt;
+  margin: 0;
+  font-weight: bold;
+}
+.flow-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4pt 30pt;
+  flex: 1;
+  gap: 5pt;
+}
+.swim-lane {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 6pt;
+}
+.lane-label {
+  width: 80pt;
+  text-align: right;
+  padding-right: 8pt;
+}
+.lane-name { color: #0EEDAF; font-size: 9pt; font-weight: bold; margin: 0; }
+.lane-sub { color: #9CA3AF; font-size: 7pt; margin: 0; }
+.lane-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 4pt;
+  background: rgba(255,255,255,0.03);
+  border-radius: 4pt;
+  padding: 7pt 10pt;
+  border-left: 2pt solid #0EEDAF;
+}
+.lane-content.orange { border-left-color: #FF9900; }
+.lane-content.pink { border-left-color: #FF706E; }
+.step-box {
+  background: rgba(255,255,255,0.08);
+  border-radius: 3pt;
+  padding: 4pt 7pt;
+  text-align: center;
+  min-width: 58pt;
+}
+.step-box p { margin: 0; font-size: 7pt; color: #D1D5DB; line-height: 1.3; }
+.step-box h6 { margin: 0; font-size: 7pt; color: #FF9900; font-weight: bold; }
+.arrow-cell p { color: #0EEDAF; font-size: 12pt; margin: 0; }
+.conn-arrow p { color: #FF9900; font-size: 9pt; margin: 0 0 0 86pt; }
+</style>
+</head>
+<body>
+<div class="title-bar">
+  <h1>OTA 端到端流程架构</h1>
+</div>
+<div class="flow-area">
+  <div class="swim-lane">
+    <div class="lane-label">
+      <p class="lane-name">管理员/平台</p>
+      <p class="lane-sub">Cloud Setup</p>
+    </div>
+    <div class="lane-content">
+      <div class="step-box"><h6>1</h6><p>上传固件到 S3</p></div>
+      <div class="arrow-cell"><p>&#8594;</p></div>
+      <div class="step-box"><h6>2</h6><p>创建 Dynamic Thing Group</p></div>
+      <div class="arrow-cell"><p>&#8594;</p></div>
+      <div class="step-box"><h6>3</h6><p>创建 IoT Job</p></div>
+      <div class="arrow-cell"><p>&#8594;</p></div>
+      <div class="step-box"><h6>4</h6><p>生成 Job Document</p></div>
+    </div>
+  </div>
+  <div class="conn-arrow"><p>&#9660; MQTT Publish (jobs/notify-next)</p></div>
+  <div class="swim-lane">
+    <div class="lane-label">
+      <p class="lane-name">AWS IoT Core</p>
+      <p class="lane-sub">Message Broker</p>
+    </div>
+    <div class="lane-content orange">
+      <div class="step-box"><h6>5</h6><p>推送 Job 通知</p></div>
+      <div class="arrow-cell"><p>&#8594;</p></div>
+      <div class="step-box"><h6>6</h6><p>生成 Presigned URL</p></div>
+      <div class="arrow-cell"><p>&#8594;</p></div>
+      <div class="step-box"><h6>9</h6><p>接收状态上报</p></div>
+      <div class="arrow-cell"><p>&#8594;</p></div>
+      <div class="step-box"><h6>10</h6><p>更新 Execution</p></div>
+    </div>
+  </div>
+  <div class="conn-arrow"><p>&#9660; MQTT Subscribe / HTTPS Download</p></div>
+  <div class="swim-lane">
+    <div class="lane-label">
+      <p class="lane-name">IoT 设备</p>
+      <p class="lane-sub">Device Client</p>
+    </div>
+    <div class="lane-content pink">
+      <div class="step-box"><h6>7</h6><p>IN_PROGRESS</p></div>
+      <div class="arrow-cell"><p>&#8594;</p></div>
+      <div class="step-box"><h6>7a</h6><p>HTTPS 下载固件</p></div>
+      <div class="arrow-cell"><p>&#8594;</p></div>
+      <div class="step-box"><h6>7b</h6><p>SHA256 校验</p></div>
+      <div class="arrow-cell"><p>&#8594;</p></div>
+      <div class="step-box"><h6>8</h6><p>安装固件重启</p></div>
+      <div class="arrow-cell"><p>&#8594;</p></div>
+      <div class="step-box"><h6>8a</h6><p>上报 SUCCEEDED</p></div>
+    </div>
+  </div>
+  <div class="conn-arrow"><p>&#9660; Shadow Update and Fleet Indexing</p></div>
+  <div class="swim-lane">
+    <div class="lane-label">
+      <p class="lane-name">后续自动化</p>
+      <p class="lane-sub">Auto Management</p>
+    </div>
+    <div class="lane-content">
+      <div class="step-box"><h6>11</h6><p>更新 Shadow</p></div>
+      <div class="arrow-cell"><p>&#8594;</p></div>
+      <div class="step-box"><h6>12</h6><p>Fleet Index 索引</p></div>
+      <div class="arrow-cell"><p>&#8594;</p></div>
+      <div class="step-box"><h6>13</h6><p>离开旧 Group</p></div>
+      <div class="arrow-cell"><p>&#8594;</p></div>
+      <div class="step-box"><h6>14</h6><p>加入新 Group</p></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

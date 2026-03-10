@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #09051B; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  background-image: url('bg-dark.jpg');
+  background-size: cover;
+}
+.title-bar {
+  padding: 24pt 48pt 12pt 48pt;
+}
+.title-bar h1 {
+  color: #FFFFFF;
+  font-size: 24pt;
+  margin: 0;
+  font-weight: bold;
+}
+.body-content {
+  display: flex;
+  flex-direction: row;
+  padding: 0 48pt;
+  gap: 24pt;
+  flex: 1;
+}
+.column { flex: 1; }
+.section-label {
+  margin: 0 0 8pt 0;
+  padding: 0 0 6pt 0;
+  border-bottom: 2pt solid #0EEDAF;
+}
+.section-label p {
+  color: #0EEDAF;
+  font-size: 11pt;
+  font-weight: bold;
+  margin: 0;
+}
+.section-label.alt {
+  border-bottom-color: #FF9900;
+}
+.section-label.alt p {
+  color: #FF9900;
+}
+.service-item {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4pt;
+  padding: 8pt 12pt;
+  margin: 6pt 0;
+}
+.service-item h4 {
+  color: #FF9900;
+  font-size: 11pt;
+  margin: 0 0 3pt 0;
+}
+.service-item p {
+  color: #D1D5DB;
+  font-size: 9pt;
+  margin: 0;
+  line-height: 1.4;
+}
+.service-item.green h4 { color: #0EEDAF; }
+</style>
+</head>
+<body>
+<div class="title-bar">
+  <h1>非终态 vs 终态</h1>
+</div>
+<div class="body-content">
+  <div class="column">
+    <div class="section-label"><p>Non-Terminal States (可转换)</p></div>
+    <div class="service-item green">
+      <h4>QUEUED</h4>
+      <p>Job 创建时自动设置，设备在队列中等待执行。可转换到 IN_PROGRESS 或直接到终态。</p>
+    </div>
+    <div class="service-item green">
+      <h4>IN_PROGRESS</h4>
+      <p>设备正在执行任务，可多次更新进度。支持与 QUEUED 来回切换（暂停/恢复场景）。</p>
+    </div>
+    <div class="service-item">
+      <h4>特殊：QUEUED &#8594; SUCCEEDED</h4>
+      <p>允许直接跳过 IN_PROGRESS。场景：设备检查发现已是目标状态。</p>
+    </div>
+  </div>
+  <div class="column">
+    <div class="section-label alt"><p>Terminal States (不可逆)</p></div>
+    <div class="service-item">
+      <h4>SUCCEEDED</h4>
+      <p>设备上报成功。OTA 场景：固件安装完成。</p>
+    </div>
+    <div class="service-item">
+      <h4>FAILED / REJECTED</h4>
+      <p>FAILED = 可重试失败（网络、校验）。REJECTED = 不可重试（硬件不兼容）。</p>
+    </div>
+    <div class="service-item">
+      <h4>TIMED_OUT</h4>
+      <p>超过 inProgressTimeoutInMinutes 或 stepTimeout 后 AWS IoT 自动设置。</p>
+    </div>
+    <div class="service-item">
+      <h4>CANCELED / REMOVED</h4>
+      <p>管理员操作触发：cancel-job 或 delete-job-execution API。</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>

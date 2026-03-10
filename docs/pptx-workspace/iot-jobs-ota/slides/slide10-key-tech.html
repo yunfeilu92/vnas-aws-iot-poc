@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #09051B; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  background-image: url('bg-dark.jpg');
+  background-size: cover;
+}
+.title-bar {
+  padding: 24pt 48pt 12pt 48pt;
+}
+.title-bar h1 {
+  color: #FFFFFF;
+  font-size: 24pt;
+  margin: 0;
+  font-weight: bold;
+}
+.body-content {
+  display: flex;
+  flex-direction: column;
+  padding: 0 48pt;
+  gap: 8pt;
+  flex: 1;
+}
+.opt-row {
+  display: flex;
+  flex-direction: row;
+  gap: 12pt;
+}
+.opt-card {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4pt;
+  padding: 10pt 14pt;
+  border-top: 2pt solid #0EEDAF;
+}
+.opt-card.orange { border-top-color: #FF9900; }
+.opt-card h4 {
+  color: #FFFFFF;
+  font-size: 10pt;
+  margin: 0 0 4pt 0;
+  font-weight: bold;
+}
+.opt-card p {
+  color: #9CA3AF;
+  font-size: 8pt;
+  margin: 0 0 4pt 0;
+  line-height: 1.4;
+}
+.impact {
+  background: rgba(14, 237, 175, 0.12);
+  border-radius: 2pt;
+  padding: 3pt 8pt;
+  display: inline-block;
+  margin-top: 2pt;
+}
+.impact p {
+  color: #0EEDAF;
+  font-size: 8pt;
+  font-weight: bold;
+  margin: 0;
+}
+.impact.orange {
+  background: rgba(255,153,0,0.12);
+}
+.impact.orange p {
+  color: #FF9900;
+}
+.summary {
+  background: rgba(255, 153, 0, 0.1);
+  border-left: 3pt solid #FF9900;
+  border-radius: 0 4pt 4pt 0;
+  padding: 10pt 16pt;
+  margin-top: 2pt;
+}
+.summary p {
+  color: #FF9900;
+  font-size: 10pt;
+  margin: 0;
+  font-weight: bold;
+}
+</style>
+</head>
+<body>
+<div class="title-bar">
+  <h1>关键技术点</h1>
+</div>
+<div class="body-content">
+  <div class="opt-row">
+    <div class="opt-card">
+      <h4>Fleet Indexing</h4>
+      <p>索引 Shadow 和 Registry 属性，支持基于 firmwareVersion 的动态查询。延迟仅几秒钟。</p>
+      <div class="impact"><p>设备自动分组基础</p></div>
+    </div>
+    <div class="opt-card orange">
+      <h4>Dynamic Thing Group</h4>
+      <p>基于查询条件自动匹配设备。Shadow 属性变化时自动加入/离开，无需手动管理。</p>
+      <div class="impact orange"><p>零人工干预设备管理</p></div>
+    </div>
+    <div class="opt-card">
+      <h4>Presigned URL</h4>
+      <p>临时 S3 访问授权，可设置过期时间（推荐 2-24 小时）。设备无需配置 AWS 凭证。</p>
+      <div class="impact"><p>安全的固件分发</p></div>
+    </div>
+  </div>
+  <div class="opt-row">
+    <div class="opt-card orange">
+      <h4>MQTT Jobs Topics</h4>
+      <p>notify-next 被动接收 + $next/get 主动查询。双模式确保设备不漏掉任何 Job。</p>
+      <div class="impact orange"><p>100% Job 送达率</p></div>
+    </div>
+    <div class="opt-card">
+      <h4>Device Shadow</h4>
+      <p>设备状态持久化存储。升级后更新 firmwareVersion，Fleet Index 自动反映最新状态。</p>
+      <div class="impact"><p>设备状态单一来源</p></div>
+    </div>
+    <div class="opt-card orange">
+      <h4>版本去重</h4>
+      <p>设备重启后未完成 Job 会重新下发。通过检查 currentVersion 防止重复下载安装。</p>
+      <div class="impact orange"><p>幂等性保障</p></div>
+    </div>
+  </div>
+  <div class="summary">
+    <p>核心模式：Shadow + Fleet Index + Dynamic Group = 全自动设备生命周期管理</p>
+  </div>
+</div>
+</body>
+</html>

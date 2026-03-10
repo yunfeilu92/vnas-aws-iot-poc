@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #09051B; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  background-image: url('bg-dark.jpg');
+  background-size: cover;
+}
+.title-bar {
+  padding: 24pt 48pt 12pt 48pt;
+}
+.title-bar h1 {
+  color: #FFFFFF;
+  font-size: 24pt;
+  margin: 0;
+  font-weight: bold;
+}
+.body-content {
+  display: flex;
+  flex-direction: column;
+  padding: 0 48pt;
+  flex: 1;
+}
+.subtitle {
+  color: #0EEDAF;
+  font-size: 11pt;
+  margin: 0 0 8pt 0;
+  font-weight: bold;
+}
+.rules {
+  display: flex;
+  gap: 16pt;
+  margin-top: 8pt;
+}
+.rule-box {
+  flex: 1;
+  background: rgba(255,255,255,0.05);
+  border-radius: 4pt;
+  padding: 8pt 12pt;
+}
+.rule-box h4 {
+  color: #0EEDAF;
+  font-size: 9pt;
+  margin: 0 0 3pt 0;
+}
+.rule-box p {
+  color: #D1D5DB;
+  font-size: 8pt;
+  margin: 0;
+  line-height: 1.4;
+}
+.rule-box.warn h4 { color: #FF706E; }
+</style>
+</head>
+<body>
+<div class="title-bar">
+  <h1>状态转换规则矩阵</h1>
+</div>
+<div class="body-content">
+  <p class="subtitle">合法转换对照表</p>
+  <div id="transition-table" class="placeholder" style="width: 624pt; height: 210pt; background: rgba(255,255,255,0.03);"></div>
+  <div class="rules">
+    <div class="rule-box">
+      <h4>&#10003; 非终态 &#8594; 任意状态</h4>
+      <p>QUEUED 和 IN_PROGRESS 可以互相转换，也可转到任意终态</p>
+    </div>
+    <div class="rule-box warn">
+      <h4>&#10007; 终态不可逆</h4>
+      <p>SUCCEEDED / FAILED / REJECTED / TIMED_OUT / CANCELED / REMOVED 无法转换到任何其他状态</p>
+    </div>
+    <div class="rule-box">
+      <h4>&#9888; InvalidStateTransitionException</h4>
+      <p>尝试非法转换时返回 HTTP 409 Conflict</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>

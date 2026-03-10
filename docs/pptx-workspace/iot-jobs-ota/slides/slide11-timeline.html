@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #09051B; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  background-image: url('bg-dark.jpg');
+  background-size: cover;
+}
+.title-bar {
+  padding: 24pt 48pt 12pt 48pt;
+}
+.title-bar h1 {
+  color: #FFFFFF;
+  font-size: 24pt;
+  margin: 0;
+  font-weight: bold;
+}
+.timeline-container {
+  display: flex;
+  flex-direction: row;
+  padding: 20pt 36pt;
+  gap: 0;
+  flex: 1;
+  align-items: flex-start;
+}
+.phase {
+  flex: 1;
+  text-align: center;
+  position: relative;
+}
+.phase h6 {
+  color: #0EEDAF;
+  font-size: 8pt;
+  font-weight: bold;
+  margin: 0 0 6pt 0;
+}
+.phase h6.orange {
+  color: #FF9900;
+}
+.phase h4 {
+  color: #FFFFFF;
+  font-size: 11pt;
+  font-weight: bold;
+  margin: 0 0 6pt 0;
+}
+.phase-line {
+  width: 100%;
+  height: 3pt;
+  background: #0EEDAF;
+  margin: 6pt 0;
+}
+.phase-items {
+  text-align: left;
+  padding: 0 6pt;
+}
+.phase-items p {
+  color: #D1D5DB;
+  font-size: 8pt;
+  margin: 2pt 0;
+  padding-left: 10pt;
+  position: relative;
+  line-height: 1.3;
+}
+.phase-items p::before {
+  content: "\25B8";
+  color: #0EEDAF;
+  position: absolute;
+  left: 0;
+}
+.phase-items h6 {
+  font-size: 7pt;
+  font-weight: bold;
+  margin: 2pt 0 0 0;
+  color: #0EEDAF;
+}
+.phase-items h6.progress {
+  color: #FF9900;
+}
+</style>
+</head>
+<body>
+<div class="title-bar">
+  <h1>OTA 设备端执行时间线</h1>
+</div>
+<div class="timeline-container">
+  <div class="phase">
+    <h6>STEP 1</h6>
+    <h4>连接</h4>
+    <div class="phase-line"></div>
+    <div class="phase-items">
+      <p>X.509 证书认证</p>
+      <p>建立 MQTT 连接</p>
+      <p>上报版本到 Shadow</p>
+      <h6>QUEUED</h6>
+    </div>
+  </div>
+  <div class="phase">
+    <h6>STEP 2</h6>
+    <h4>接收</h4>
+    <div class="phase-line"></div>
+    <div class="phase-items">
+      <p>订阅 notify-next</p>
+      <p>请求 pending Jobs</p>
+      <p>解析 Job Document</p>
+      <h6 class="progress">IN_PROGRESS</h6>
+    </div>
+  </div>
+  <div class="phase">
+    <h6 class="orange">STEP 3</h6>
+    <h4>下载</h4>
+    <div class="phase-line"></div>
+    <div class="phase-items">
+      <p>Presigned URL</p>
+      <p>HTTPS 下载固件</p>
+      <p>实时上报进度</p>
+    </div>
+  </div>
+  <div class="phase">
+    <h6 class="orange">STEP 4</h6>
+    <h4>校验</h4>
+    <div class="phase-line"></div>
+    <div class="phase-items">
+      <p>SHA256 校验和</p>
+      <p>签名验证 (可选)</p>
+      <p>失败则 FAILED</p>
+    </div>
+  </div>
+  <div class="phase">
+    <h6>STEP 5</h6>
+    <h4>安装</h4>
+    <div class="phase-line"></div>
+    <div class="phase-items">
+      <p>备份当前固件</p>
+      <p>写入新固件</p>
+      <p>更新启动脚本</p>
+      <p>触发设备重启</p>
+    </div>
+  </div>
+  <div class="phase">
+    <h6>STEP 6</h6>
+    <h4>上报</h4>
+    <div class="phase-line"></div>
+    <div class="phase-items">
+      <p>上报 SUCCEEDED</p>
+      <p>更新 Shadow</p>
+      <p>离开旧 Group</p>
+      <h6>SUCCEEDED</h6>
+    </div>
+  </div>
+</div>
+</body>
+</html>

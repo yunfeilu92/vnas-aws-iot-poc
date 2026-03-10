@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #09051B; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  background-image: url('bg-dark.jpg');
+  background-size: cover;
+}
+.title-bar {
+  padding: 24pt 48pt 8pt 48pt;
+}
+h1 {
+  color: #FFFFFF;
+  font-size: 24pt;
+  margin: 0;
+  font-weight: bold;
+}
+.flow-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8pt 36pt;
+  flex: 1;
+}
+.flow-row {
+  display: flex;
+  align-items: center;
+  gap: 6pt;
+  margin-bottom: 6pt;
+}
+.state-box {
+  padding: 8pt 16pt;
+  border-radius: 5pt;
+  text-align: center;
+  min-width: 90pt;
+}
+.state-box p {
+  margin: 0;
+  font-size: 11pt;
+  font-weight: bold;
+}
+.state-initial {
+  background: rgba(14,237,175,0.2);
+  border: 2pt solid #0EEDAF;
+}
+.state-initial p { color: #0EEDAF; }
+.state-active {
+  background: rgba(255,153,0,0.2);
+  border: 2pt solid #FF9900;
+}
+.state-active p { color: #FF9900; }
+.state-terminal {
+  background: rgba(255,255,255,0.08);
+  border: 1.5pt solid rgba(255,255,255,0.3);
+  min-width: 70pt;
+  padding: 6pt 10pt;
+}
+.state-terminal p { color: #D1D5DB; font-size: 9pt; margin: 0; font-weight: bold; }
+.state-admin {
+  background: rgba(255,112,110,0.15);
+  border: 1.5pt solid #FF706E;
+  min-width: 70pt;
+  padding: 6pt 10pt;
+}
+.state-admin p { color: #FF706E; font-size: 9pt; margin: 0; font-weight: bold; }
+.arrow p { color: #0EEDAF; font-size: 16pt; margin: 0; }
+.bidir p { color: #FF9900; font-size: 10pt; margin: 0; }
+.label p { color: #9CA3AF; font-size: 8pt; margin: 2pt 0 0 0; text-align: center; }
+.terminal-row {
+  display: flex;
+  gap: 10pt;
+  margin-top: 4pt;
+}
+.sep p { color: #9CA3AF; font-size: 8pt; margin: 6pt 0 2pt 0; }
+.legend {
+  display: flex;
+  gap: 20pt;
+  margin-top: 8pt;
+  padding: 6pt 16pt;
+  background: rgba(255,255,255,0.04);
+  border-radius: 4pt;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6pt;
+}
+.legend-dot {
+  width: 8pt;
+  height: 8pt;
+  border-radius: 50%;
+}
+.legend-item p { color: #9CA3AF; font-size: 8pt; margin: 0; }
+.succeed p { color: #0EEDAF !important; }
+.fail p { color: #FF706E !important; }
+.timeout p { color: #FF9900 !important; }
+</style>
+</head>
+<body>
+<div class="title-bar">
+  <h1>Job Execution 状态机流程</h1>
+</div>
+<div class="flow-container">
+  <!-- Row 1: Initial + Active states -->
+  <div class="flow-row">
+    <div>
+      <div class="state-box state-initial"><p>QUEUED</p></div>
+      <div class="label"><p>队列等待</p></div>
+    </div>
+    <div>
+      <div class="arrow"><p>&#8594;</p></div>
+      <div class="bidir"><p>&#8596; 可逆</p></div>
+    </div>
+    <div>
+      <div class="state-box state-active"><p>IN_PROGRESS</p></div>
+      <div class="label"><p>设备执行中</p></div>
+    </div>
+  </div>
+
+  <div class="arrow"><p>&#9660;</p></div>
+  <div class="sep"><p>设备上报结果</p></div>
+
+  <!-- Row 2: Terminal states from device -->
+  <div class="terminal-row">
+    <div>
+      <div class="state-box state-terminal succeed"><p>SUCCEEDED</p></div>
+      <div class="label"><p>成功完成</p></div>
+    </div>
+    <div>
+      <div class="state-box state-terminal fail"><p>FAILED</p></div>
+      <div class="label"><p>执行失败</p></div>
+    </div>
+    <div>
+      <div class="state-box state-terminal"><p>REJECTED</p></div>
+      <div class="label"><p>设备拒绝</p></div>
+    </div>
+    <div>
+      <div class="state-box state-terminal timeout"><p>TIMED_OUT</p></div>
+      <div class="label"><p>执行超时</p></div>
+    </div>
+  </div>
+
+  <div class="sep"><p>&#9472;&#9472;&#9472;&#9472; 管理员操作（任意状态均可触发） &#9472;&#9472;&#9472;&#9472;</p></div>
+
+  <!-- Row 3: Admin-triggered states -->
+  <div class="terminal-row">
+    <div>
+      <div class="state-box state-admin"><p>CANCELED</p></div>
+      <div class="label"><p>cancel-job API</p></div>
+    </div>
+    <div>
+      <div class="state-box state-admin"><p>REMOVED</p></div>
+      <div class="label"><p>delete-job-execution API</p></div>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#0EEDAF;"></div>
+      <p>初始状态</p>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#FF9900;"></div>
+      <p>执行中</p>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:rgba(255,255,255,0.3);"></div>
+      <p>设备终态</p>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#FF706E;"></div>
+      <p>管理员终态</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>
