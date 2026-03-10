@@ -28,6 +28,7 @@ public class OtaClient {
     private final MqttClientConnection connection;
     private final Gson gson = new Gson();
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private volatile String currentJobId = null;
 
     /**
      * @param thingName  AWS IoT Thing 名称
@@ -49,6 +50,7 @@ public class OtaClient {
 
         // 注册终态回调：Job 完成后自动请求下一个 pending Job
         otaService.setOnJobTerminalCallback(() -> {
+            currentJobId = null;
             try {
                 requestPendingJobs();
             } catch (Exception e) {
@@ -132,7 +134,7 @@ public class OtaClient {
             JsonObject execution = root.getAsJsonObject("execution");
             String jobId = execution.has("jobId") ? execution.get("jobId").getAsString() : "unknown";
 
-            // 检查 execution status，跳过已处于终态的 Job（支持 Continuous Job 场景）
+            // 检查 execution status，跳过已处于终态的 Job
             if (execution.has("status")) {
                 String status = execution.get("status").getAsString();
                 if ("SUCCEEDED".equals(status) || "FAILED".equals(status)
@@ -141,14 +143,17 @@ public class OtaClient {
                     System.out.println("[OtaClient] Skipping job in terminal state: " + status + " (via " + source + ")");
                     return;
                 }
-                // IN_PROGRESS 状态的 Job 也跳过（可能是上次未完成的，避免重复处理）
-                if ("IN_PROGRESS".equals(status)) {
-                    System.out.println("[OtaClient] Skipping job already IN_PROGRESS (jobId: " + jobId + ", via " + source + ")");
-                    return;
-                }
             }
 
-            // 委托给 OtaService 处理（仅处理 QUEUED 状态的 Job）
+            // 跳过当前正在处理的 Job（防止轮询/推送重复派发同一 Job）
+            // 注意：不再跳过所有 IN_PROGRESS Job，这样重启后能恢复中断的升级
+            if (jobId.equals(currentJobId)) {
+                System.out.println("[OtaClient] Skipping job already being processed (jobId: " + jobId + ", via " + source + ")");
+                return;
+            }
+
+            // 记录当前 Job ID，委托给 OtaService 处理
+            currentJobId = jobId;
             System.out.println("[OtaClient] >>> Dispatching job " + jobId + " to OtaService (via " + source + ")");
             otaService.onJobReceived(execution);
 
