@@ -1,21 +1,38 @@
 #!/bin/bash
 
 # OTA Job 创建脚本（基于 Dynamic Thing Group）
-# 用法: ./create-ota-job.sh <from-version> <to-version>
+# 用法: ./create-ota-job.sh <from-version> <to-version> [--continuous]
 #
 # 示例:
-#   ./create-ota-job.sh 1.0.2 1.0.3    # 将所有 1.0.2 设备升级到 1.0.3
-#   ./create-ota-job.sh 1.0.3 1.0.4    # 将所有 1.0.3 设备升级到 1.0.4
+#   ./create-ota-job.sh 1.0.2 1.0.3              # Snapshot Job：将所有 1.0.2 设备升级到 1.0.3
+#   ./create-ota-job.sh 1.0.3 1.0.4              # Snapshot Job：将所有 1.0.3 设备升级到 1.0.4
+#   ./create-ota-job.sh 1.0.2 1.0.3 --continuous # Continuous Job：新加入组的设备也会自动升级
 
 set -e  # 遇到错误立即退出
 
 # ========== 配置参数 ==========
 FROM_VERSION="$1"
 TO_VERSION="$2"
+JOB_TYPE="SNAPSHOT"  # 默认为 Snapshot Job
 S3_BUCKET="vnas-iot-firmware-497892281794"
 REGION="us-east-1"
 PRESIGNED_URL_EXPIRY=3600  # 1 小时
 CREATE_GROUP_IF_NOT_EXISTS=true  # 如果 Thing Group 不存在，是否自动创建
+
+# 解析可选参数
+shift 2 2>/dev/null || true
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --continuous)
+            JOB_TYPE="CONTINUOUS"
+            shift
+            ;;
+        *)
+            echo -e "${RED}未知参数: $1${NC}"
+            exit 1
+            ;;
+    esac
+done
 
 # 颜色输出
 GREEN='\033[0;32m'
@@ -46,6 +63,7 @@ GROUP_NAME="firmware-v${FROM_VERSION//./-}"
 echo -e "${GREEN}========== OTA Job 创建脚本 ==========${NC}"
 echo "源版本: $FROM_VERSION"
 echo "目标版本: $TO_VERSION"
+echo "Job 类型: $JOB_TYPE"
 echo "Thing Group: $GROUP_NAME"
 echo "S3 Bucket: $S3_BUCKET"
 echo "Region: $REGION"
@@ -174,13 +192,15 @@ aws iot create-job \
   --job-id "$JOB_ID" \
   --targets "$GROUP_ARN" \
   --document file://"$JOB_DOCUMENT_FILE" \
-  --description "OTA upgrade from v${FROM_VERSION} to v${TO_VERSION} via Dynamic Thing Group" \
+  --description "OTA upgrade from v${FROM_VERSION} to v${TO_VERSION} via Dynamic Thing Group ($JOB_TYPE)" \
+  --target-selection "$JOB_TYPE" \
   --region "$REGION" \
   --output table
 
 echo ""
 echo -e "${GREEN}========== Job 创建成功 ==========${NC}"
 echo "Job ID: $JOB_ID"
+echo "Job 类型: $JOB_TYPE"
 echo "Thing Group: $GROUP_NAME"
 echo "Upgrade Path: $FROM_VERSION → $TO_VERSION"
 echo ""
