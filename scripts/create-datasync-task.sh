@@ -8,7 +8,7 @@
 set -euo pipefail
 
 # ─── 配置参数 ───
-ACCOUNT_ID="625131070380"
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 IAM_ROLE_ARN="arn:aws:iam::${ACCOUNT_ID}:role/admin"
 
 SOURCE_REGION="me-central-1"

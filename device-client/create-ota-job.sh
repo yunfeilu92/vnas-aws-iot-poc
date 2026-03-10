@@ -14,7 +14,8 @@ set -e  # 遇到错误立即退出
 FROM_VERSION="$1"
 TO_VERSION="$2"
 JOB_TYPE="SNAPSHOT"  # 默认为 Snapshot Job
-S3_BUCKET="vnas-iot-firmware-497892281794"
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+S3_BUCKET="vnas-iot-firmware-${ACCOUNT_ID}"
 REGION="us-east-1"
 PRESIGNED_URL_EXPIRY=3600  # 1 小时
 CREATE_GROUP_IF_NOT_EXISTS=true  # 如果 Thing Group 不存在，是否自动创建
