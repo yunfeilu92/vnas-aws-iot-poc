@@ -98,13 +98,13 @@ public class OtaDemo {
 
             @Override
             public void onNewPackage(OtaPackage pkg) {
-                // ✨ 完整控制升级流程（类似华为 SDK 示例）
                 System.out.println("[Demo] New firmware package received: " + pkg);
 
                 // ===== 1. 版本检查 =====
                 String currentVersion = getCurrentVersion();
                 if (pkg.getVersion().equals(currentVersion)) {
                     System.out.println("[Demo] Already running target version " + pkg.getVersion());
+
                     try {
                         service.reportJobStatus(pkg.getJobId(), "SUCCEEDED",
                                 "already running target version " + pkg.getVersion());
@@ -117,6 +117,7 @@ public class OtaDemo {
                 // ===== 2. 校验 Job Document =====
                 if (pkg.getPackageUrl() == null || pkg.getPackageUrl().isEmpty()) {
                     System.err.println("[Demo] Invalid job document: missing packageUrl");
+
                     try {
                         service.reportJobStatus(pkg.getJobId(), "REJECTED",
                                 "invalid job document: missing packageUrl");
@@ -128,6 +129,7 @@ public class OtaDemo {
 
                 if (pkg.getChecksum() == null || pkg.getChecksum().isEmpty()) {
                     System.err.println("[Demo] Invalid job document: missing checksum");
+
                     try {
                         service.reportJobStatus(pkg.getJobId(), "REJECTED",
                                 "invalid job document: missing checksum for security");
