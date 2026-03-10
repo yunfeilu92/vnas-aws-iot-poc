@@ -73,15 +73,16 @@ public class OtaClient {
         // 订阅 notify-next（接收新 job 创建的被动通知）
         String notifyTopic = "$aws/things/" + thingName + "/jobs/notify-next";
         connection.subscribe(notifyTopic, QualityOfService.AT_LEAST_ONCE, (message) -> {
-            System.out.println("[OtaClient] ✨ Received message on notify-next"); // 调试日志
-            handleJobNotification(message);
+            System.out.println("[OtaClient] <<< NOTIFY-NEXT (passive push)");
+            handleJobNotification(message, "notify-next");
         }).get();
         System.out.println("[OtaClient] Subscribed to: " + notifyTopic);
 
         // 订阅 $next/get/accepted（接收主动查询的响应）
         String getAcceptedTopic = "$aws/things/" + thingName + "/jobs/$next/get/accepted";
         connection.subscribe(getAcceptedTopic, QualityOfService.AT_LEAST_ONCE, (message) -> {
-            handleJobNotification(message);
+            System.out.println("[OtaClient] <<< GET-ACCEPTED (active pull)");
+            handleJobNotification(message, "$next/get/accepted");
         }).get();
         System.out.println("[OtaClient] Subscribed to: " + getAcceptedTopic);
 
@@ -115,19 +116,21 @@ public class OtaClient {
 
     /**
      * 处理 Job 通知消息，解析后委托给 OtaService。
+     * @param source 消息来源（"notify-next" 或 "$next/get/accepted"）
      */
-    private void handleJobNotification(MqttMessage message) {
+    private void handleJobNotification(MqttMessage message, String source) {
         try {
             String payload = new String(message.getPayload(), StandardCharsets.UTF_8);
             JsonObject root = gson.fromJson(payload, JsonObject.class);
 
             // notify-next 的 payload 结构：{ "execution": { "jobId": "...", "status": "...", "jobDocument": {...} } }
             if (!root.has("execution") || root.get("execution").isJsonNull()) {
-                System.out.println("[OtaClient] No pending job.");
+                System.out.println("[OtaClient] No pending job. (via " + source + ")");
                 return;
             }
 
             JsonObject execution = root.getAsJsonObject("execution");
+            String jobId = execution.has("jobId") ? execution.get("jobId").getAsString() : "unknown";
 
             // 检查 execution status，跳过已处于终态的 Job（支持 Continuous Job 场景）
             if (execution.has("status")) {
@@ -135,18 +138,18 @@ public class OtaClient {
                 if ("SUCCEEDED".equals(status) || "FAILED".equals(status)
                         || "REJECTED".equals(status) || "REMOVED".equals(status)
                         || "CANCELED".equals(status)) {
-                    System.out.println("[OtaClient] Skipping job in terminal state: " + status);
+                    System.out.println("[OtaClient] Skipping job in terminal state: " + status + " (via " + source + ")");
                     return;
                 }
                 // IN_PROGRESS 状态的 Job 也跳过（可能是上次未完成的，避免重复处理）
                 if ("IN_PROGRESS".equals(status)) {
-                    System.out.println("[OtaClient] Skipping job already IN_PROGRESS (jobId: "
-                            + (execution.has("jobId") ? execution.get("jobId").getAsString() : "unknown") + ")");
+                    System.out.println("[OtaClient] Skipping job already IN_PROGRESS (jobId: " + jobId + ", via " + source + ")");
                     return;
                 }
             }
 
             // 委托给 OtaService 处理（仅处理 QUEUED 状态的 Job）
+            System.out.println("[OtaClient] >>> Dispatching job " + jobId + " to OtaService (via " + source + ")");
             otaService.onJobReceived(execution);
 
         } catch (Exception e) {
