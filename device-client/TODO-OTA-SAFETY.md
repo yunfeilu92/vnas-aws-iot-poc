@@ -1,16 +1,6 @@
 # OTA Safety Issues TODO
 
-## 1. [HIGH] Device Restart - Job Stuck in IN_PROGRESS
-
-**Problem:** Device reports IN_PROGRESS, then crashes/restarts. After reconnection, the Job is still IN_PROGRESS in AWS. OtaClient skips IN_PROGRESS Jobs, so the Job is never retried.
-
-**Fix:** Allow IN_PROGRESS Jobs to be re-processed (remove the skip logic, or add a "resume" mechanism). The version check in OtaDemo already prevents duplicate installation if the previous attempt actually succeeded before the crash.
-
-**File:** `OtaClient.java` - `handleJobNotification()` lines 143-147
-
----
-
-## 2. [HIGH] Presigned URL Expiration (CONTINUOUS Job)
+## 1. [HIGH] Presigned URL Expiration (CONTINUOUS Job)
 
 **Problem:** Job Document contains a presigned S3 URL with 1-hour expiry. CONTINUOUS Jobs run for days/months. New devices joining the group after 1 hour will get HTTP 403 on download.
 
@@ -20,7 +10,7 @@
 
 ---
 
-## 3. [LOW] Firmware Downgrade Not Blocked
+## 2. [LOW] Firmware Downgrade Not Blocked
 
 **Problem:** Version check only uses `equals()`. If a Job targets version 1.0.2 and device is on 1.0.4, the device will downgrade.
 
@@ -30,7 +20,8 @@
 
 ---
 
-## Resolved / Not Applicable
+## Resolved
 
-- ~~Concurrent Upgrade~~ - AWS IoT Jobs `$next` mechanism guarantees one job at a time, no device-side mutex needed.
-- ~~Version File Tampering~~ - Demo uses plain text file; production devices read version from firmware binary, not applicable here.
+- ~~Device Restart Job Stuck~~ - Fixed: replaced blanket IN_PROGRESS skip with in-memory `currentJobId` dedup. After restart, currentJobId is null so IN_PROGRESS jobs are re-processed. OtaDemo version check handles both cases (already upgraded vs need retry). Commit `88f4821`.
+- ~~Concurrent Upgrade~~ - Not an issue: AWS IoT Jobs `$next` mechanism guarantees one job at a time.
+- ~~Version File Tampering~~ - Not applicable for demo; production devices read version from firmware binary.
