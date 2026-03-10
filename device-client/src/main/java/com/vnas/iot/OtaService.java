@@ -151,13 +151,15 @@ public class OtaService {
             String jobId = execution.get("jobId").getAsString();
             JsonObject jobDoc = execution.getAsJsonObject("jobDocument");
 
-            // 解析 Job Document
+            // 解析 Job Document（支持 S3 直接下载和 presigned URL 两种格式）
             String version = jobDoc.get("version").getAsString();
-            String packageUrl = jobDoc.get("packageUrl").getAsString();
+            String s3Bucket = jobDoc.has("s3Bucket") ? jobDoc.get("s3Bucket").getAsString() : "";
+            String s3Key = jobDoc.has("s3Key") ? jobDoc.get("s3Key").getAsString() : "";
+            String packageUrl = jobDoc.has("packageUrl") ? jobDoc.get("packageUrl").getAsString() : "";
             String checksum = jobDoc.has("checksum") ? jobDoc.get("checksum").getAsString() : "";
             String checksumType = jobDoc.has("checksumType") ? jobDoc.get("checksumType").getAsString() : "sha256";
 
-            OtaPackage pkg = new OtaPackage(jobId, version, packageUrl, checksum, checksumType);
+            OtaPackage pkg = new OtaPackage(jobId, version, s3Bucket, s3Key, packageUrl, checksum, checksumType);
             System.out.println("[OtaService] New OTA job received: " + pkg);
 
             // 路由到 listener（用户在这里完全控制升级流程）

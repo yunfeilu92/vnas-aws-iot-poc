@@ -11,15 +11,21 @@ import java.util.concurrent.CompletableFuture;
  * OTA 客户端使用示例 - 重构版。
  *
  * 用法：
- *   java -jar device-client.jar <endpoint> <thingName> <certPath> <keyPath> <caPath>
+ *   java -jar device-client.jar <endpoint> <thingName> <certPath> <keyPath> <caPath> [credentialEndpoint] [roleAlias] [region]
  *
- * 示例：
+ * 示例（presigned URL 模式）：
  *   java -jar device-client.jar \
- *     a1b2c3d4e5f6g7-ats.iot.ap-southeast-1.amazonaws.com \
+ *     a1b2c3d4e5f6g7-ats.iot.us-east-1.amazonaws.com \
  *     device-001 \
- *     certs/device.pem.crt \
- *     certs/device.pem.key \
- *     certs/AmazonRootCA1.pem
+ *     certs/device.pem.crt certs/device.pem.key certs/AmazonRootCA1.pem
+ *
+ * 示例（S3 直接下载模式 - 推荐用于 CONTINUOUS Job）：
+ *   java -jar device-client.jar \
+ *     a1b2c3d4e5f6g7-ats.iot.us-east-1.amazonaws.com \
+ *     device-001 \
+ *     certs/device.pem.crt certs/device.pem.key certs/AmazonRootCA1.pem \
+ *     c1b2a3d4e5f6g7.credentials.iot.us-east-1.amazonaws.com \
+ *     FirmwareDownloadAlias us-east-1
  *
  * 重构说明：
  * - 用户在 onNewPackage() 中完全控制升级流程
@@ -60,7 +66,7 @@ public class OtaDemo {
 
     public static void main(String[] args) throws Exception {
         if (args.length < 5) {
-            System.err.println("Usage: java -jar device-client.jar <endpoint> <thingName> <certPath> <keyPath> <caPath>");
+            System.err.println("Usage: java -jar device-client.jar <endpoint> <thingName> <certPath> <keyPath> <caPath> [credentialEndpoint] [roleAlias] [region]");
             System.exit(1);
         }
 
@@ -69,6 +75,17 @@ public class OtaDemo {
         String certPath = args[2];
         String keyPath = args[3];
         String caPath = args[4];
+
+        // 可选参数：IoT Credentials Provider（用于 S3 直接下载）
+        String credentialEndpoint = args.length > 5 ? args[5] : null;
+        String roleAlias = args.length > 6 ? args[6] : null;
+        String region = args.length > 7 ? args[7] : "us-east-1";
+
+        if (credentialEndpoint != null) {
+            System.out.println("[Demo] S3 download mode enabled (IoT Credentials Provider)");
+        } else {
+            System.out.println("[Demo] Presigned URL download mode (pass credentialEndpoint/roleAlias for S3 mode)");
+        }
 
         // 1. 创建 MQTT 连接（未连接）
         AwsIotMqttConnectionBuilder builder = AwsIotMqttConnectionBuilder.newMtlsBuilderFromPath(certPath, keyPath);
@@ -115,12 +132,14 @@ public class OtaDemo {
                 }
 
                 // ===== 2. 校验 Job Document =====
-                if (pkg.getPackageUrl() == null || pkg.getPackageUrl().isEmpty()) {
-                    System.err.println("[Demo] Invalid job document: missing packageUrl");
+                boolean hasS3 = pkg.hasS3Location();
+                boolean hasUrl = pkg.getPackageUrl() != null && !pkg.getPackageUrl().isEmpty();
+                if (!hasS3 && !hasUrl) {
+                    System.err.println("[Demo] Invalid job document: missing s3Bucket/s3Key or packageUrl");
 
                     try {
                         service.reportJobStatus(pkg.getJobId(), "REJECTED",
-                                "invalid job document: missing packageUrl");
+                                "invalid job document: no download location (need s3Bucket+s3Key or packageUrl)");
                     } catch (Exception e) {
                         System.err.println("[Demo] Failed to report status: " + e.getMessage());
                     }
@@ -146,17 +165,24 @@ public class OtaDemo {
                     try {
                         // 阶段 1: 开始下载
                         currentPhase = "downloading";
+                        String downloadSource = pkg.hasS3Location()
+                                ? "s3://" + pkg.getS3Bucket() + "/" + pkg.getS3Key()
+                                : pkg.getPackageUrl();
                         System.out.println("[Demo] Starting firmware download...");
                         service.reportJobStatus(pkg.getJobId(), "IN_PROGRESS",
-                                "downloading firmware v" + pkg.getVersion() + " from " + pkg.getPackageUrl());
+                                "downloading firmware v" + pkg.getVersion() + " from " + downloadSource);
 
                         FirmwareDownloader downloader = new FirmwareDownloader(this);
+                        if (credentialEndpoint != null) {
+                            downloader.configureS3(credentialEndpoint, roleAlias, thingName,
+                                    certPath, keyPath, caPath, region);
+                        }
                         Path outputPath = DOWNLOAD_DIR.resolve("firmware-" + pkg.getVersion() + ".bin");
 
                         boolean downloadSuccess = downloader.download(pkg, outputPath);
                         if (!downloadSuccess) {
                             service.reportJobStatus(pkg.getJobId(), "FAILED",
-                                    "firmware download failed: unable to download from " + pkg.getPackageUrl());
+                                    "firmware download failed: unable to download from " + downloadSource);
                             onProgress(-1, "failed: download error");
                             return;
                         }

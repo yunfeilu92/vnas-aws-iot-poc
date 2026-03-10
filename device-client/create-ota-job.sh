@@ -16,7 +16,6 @@ TO_VERSION="$2"
 JOB_TYPE="SNAPSHOT"  # 默认为 Snapshot Job
 S3_BUCKET="vnas-iot-firmware-497892281794"
 REGION="us-east-1"
-PRESIGNED_URL_EXPIRY=3600  # 1 小时
 CREATE_GROUP_IF_NOT_EXISTS=true  # 如果 Thing Group 不存在，是否自动创建
 
 # 解析可选参数
@@ -116,14 +115,8 @@ aws s3 cp "$FIRMWARE_FILE" "$S3_URI" --region "$REGION"
 echo "✓ 已上传到: $S3_URI"
 echo ""
 
-# ========== Step 3: 生成 Presigned URL ==========
-echo -e "${YELLOW}[3/6] 生成 Presigned URL...${NC}"
-PRESIGNED_URL=$(aws s3 presign "$S3_URI" --expires-in "$PRESIGNED_URL_EXPIRY" --region "$REGION")
-echo "✓ URL 有效期: $((PRESIGNED_URL_EXPIRY / 3600)) 小时"
-echo ""
-
-# ========== Step 4: 计算 Checksum ==========
-echo -e "${YELLOW}[4/6] 计算 SHA-256 checksum...${NC}"
+# ========== Step 3: 计算 Checksum ==========
+echo -e "${YELLOW}[3/6] 计算 SHA-256 checksum...${NC}"
 if command -v shasum &> /dev/null; then
     CHECKSUM=$(shasum -a 256 "$FIRMWARE_FILE" | awk '{print $1}')
 elif command -v sha256sum &> /dev/null; then
@@ -135,14 +128,15 @@ fi
 echo "✓ Checksum: $CHECKSUM"
 echo ""
 
-# ========== Step 5: 创建 Job Document ==========
-echo -e "${YELLOW}[5/6] 创建 Job Document...${NC}"
+# ========== Step 4: 创建 Job Document ==========
+echo -e "${YELLOW}[4/6] 创建 Job Document...${NC}"
 JOB_DOCUMENT_FILE="job-document-v${TO_VERSION}.json"
 
 cat > "$JOB_DOCUMENT_FILE" <<EOF
 {
   "version": "$TO_VERSION",
-  "packageUrl": "$PRESIGNED_URL",
+  "s3Bucket": "$S3_BUCKET",
+  "s3Key": "$S3_KEY",
   "checksum": "$CHECKSUM",
   "checksumType": "sha256"
 }
@@ -151,8 +145,8 @@ EOF
 echo "✓ 已创建: $JOB_DOCUMENT_FILE"
 echo ""
 
-# ========== Step 6: 确认 Thing Group 有成员 ==========
-echo -e "${YELLOW}[6/7] 确认 Thing Group 成员...${NC}"
+# ========== Step 5: 确认 Thing Group 有成员 ==========
+echo -e "${YELLOW}[5/6] 确认 Thing Group 成员...${NC}"
 
 # 使用 search-index 查询（比 list-things-in-thing-group 更实时）
 echo "查询运行 v$FROM_VERSION 的设备..."
@@ -181,8 +175,8 @@ for thing in $MATCHING_THINGS; do
 done
 echo ""
 
-# ========== Step 7: 创建 OTA Job ==========
-echo -e "${YELLOW}[7/7] 创建 AWS IoT Job...${NC}"
+# ========== Step 6: 创建 OTA Job ==========
+echo -e "${YELLOW}[6/6] 创建 AWS IoT Job...${NC}"
 
 # 生成唯一 Job ID
 JOB_ID="ota-upgrade-$(date +%s)"
