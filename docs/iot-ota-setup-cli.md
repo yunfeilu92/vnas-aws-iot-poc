@@ -85,15 +85,28 @@ aws iam put-role-policy --role-name vnas-iot-job-s3-role --policy-name GetFirmwa
 
 ## 6. Dynamic Thing Group + OTA Job
 
-```bash
-aws iot create-dynamic-thing-group --thing-group-name ota-from-1-0-2 \
-  --query-string "shadow.reported.firmwareVersion:1.0.2"
+Per-upgrade runtime step — the query condition changes every batch (which source
+version to upgrade), so parameterize `FROM` / `TO`. In practice just run
+`device-client/create-ota-job.sh <from> <to>`, which does exactly this.
 
-aws iot create-job --job-id ota-upgrade-$(date +%s) \
-  --targets arn:aws:iot:$REGION:$ACCT:thinggroup/ota-from-1-0-2 \
-  --document file://job-document-v1.0.3.json \
+```bash
+FROM=1.0.2          # current version of this batch (upgrade source)
+TO=1.0.3            # target version
+GROUP=ota-from-${FROM//./-}
+
+# Dynamic group: query condition follows FROM. Reuse if it already exists.
+aws iot describe-thing-group --thing-group-name "$GROUP" >/dev/null 2>&1 || \
+aws iot create-dynamic-thing-group --thing-group-name "$GROUP" \
+  --query-string "shadow.reported.firmwareVersion:$FROM"
+
+aws iot create-job --job-id "ota-${FROM}-to-${TO}-$(date +%s)" \
+  --targets "arn:aws:iot:$REGION:$ACCT:thinggroup/$GROUP" \
+  --document "file://job-document-v${TO}.json" \
   --presigned-url-config "roleArn=arn:aws:iam::$ACCT:role/vnas-iot-job-s3-role,expiresInSec=3600"
 ```
+
+> Dynamic thing groups have a per-account quota (~100) and keep querying in the
+> background. Clean up used groups after a batch (see `cleanup-ota-jobs.sh`).
 
 ## 7. CloudWatch monitoring (telemetry → metric → alarm)
 
@@ -105,11 +118,6 @@ aws iam create-role --role-name IoTRuleCWRole \
   --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"iot.amazonaws.com"},"Action":"sts:AssumeRole"}]}'
 aws iam put-role-policy --role-name IoTRuleCWRole --policy-name PutMetricData \
   --policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":"cloudwatch:PutMetricData","Resource":"*"}]}'
-
-# SNS topic + email subscription
-SNS_ARN=$(aws sns create-topic --name vnas-iot-alerts --query TopicArn --output text)
-aws sns subscribe --topic-arn $SNS_ARN --protocol email \
-  --notification-endpoint you@example.com
 
 # Topic rule: SELECT cpu, deviceId from topic segment → CloudWatch metric
 # ${deviceId} / ${cpu} are IoT substitution templates — escaped with \$ for bash.
@@ -127,13 +135,18 @@ aws iot create-topic-rule --rule-name VnasCpuMetric --topic-rule-payload "{
   }]
 }"
 
-# Alarm per device
+# Alarm per device (notification action TBD — see note below)
 aws cloudwatch put-metric-alarm --alarm-name vnas-cpu-high-device-001 \
   --namespace VnasIoT/Device --metric-name CPU_device-001 \
   --statistic Maximum --period 300 --threshold 90 \
   --comparison-operator GreaterThanThreshold --evaluation-periods 2 \
-  --treat-missing-data notBreaching --alarm-actions $SNS_ARN
+  --treat-missing-data notBreaching
 ```
+
+> **Alarm notification — TBD.** How alarms are delivered (SNS → email, or a
+> Lambda action) is not decided yet. Intentionally NOT created here — no SNS
+> topic, no subscription, in either CLI or Terraform. Once chosen, add
+> `--alarm-actions` (CLI) / `alarm_actions` (Terraform).
 
 ## 8. (Optional) Custom domain endpoint
 

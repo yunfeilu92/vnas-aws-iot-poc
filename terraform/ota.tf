@@ -29,20 +29,8 @@ resource "aws_iam_role_policy" "job_s3" {
   })
 }
 
-# Dynamic Thing Group — no native Terraform resource (provider issue #28575).
-# Wrap the CLI. Recreated when ota_from_version changes.
-resource "null_resource" "ota_dynamic_group" {
-  triggers = {
-    from_version = var.ota_from_version
-    region       = var.region
-  }
-
-  provisioner "local-exec" {
-    command = "aws iot create-dynamic-thing-group --region ${var.region} --thing-group-name ota-from-${replace(var.ota_from_version, ".", "-")} --query-string \"shadow.reported.firmwareVersion:${var.ota_from_version}\""
-  }
-
-  depends_on = [aws_iot_indexing_configuration.fleet]
-}
-
-# IoT Job is a one-shot operation, intentionally NOT managed here.
-# Trigger it with device-client/create-ota-job.sh after apply.
+# Dynamic Thing Group and IoT Job are OTA runtime artifacts, NOT managed here.
+# Their query condition (which source version to upgrade) changes every batch,
+# so they don't belong in IaC. Create them at upgrade time with
+#   device-client/create-ota-job.sh <from> <to>
+# which names the group by source version and reuses it if it already exists.

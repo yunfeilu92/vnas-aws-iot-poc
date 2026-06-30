@@ -38,16 +38,8 @@ resource "aws_iot_topic_rule" "cpu_metric" {
   }
 }
 
-# Alert delivery
-resource "aws_sns_topic" "alerts" {
-  name = "vnas-iot-alerts"
-}
-
-resource "aws_sns_topic_subscription" "email" {
-  topic_arn = aws_sns_topic.alerts.arn
-  protocol  = "email"
-  endpoint  = var.alert_email
-}
+# Alarm notification (SNS -> email, or a Lambda action) is TBD.
+# No SNS topic / subscription created for now; alarm_actions left empty.
 
 # One CPU alarm per device. each.value is a real Terraform interpolation.
 resource "aws_cloudwatch_metric_alarm" "cpu_high" {
@@ -61,5 +53,5 @@ resource "aws_cloudwatch_metric_alarm" "cpu_high" {
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 2
   treat_missing_data  = "notBreaching"
-  alarm_actions       = [aws_sns_topic.alerts.arn]
+  alarm_actions       = [] # TBD: SNS or Lambda
 }

@@ -21,17 +21,6 @@ variable "firmware_bucket_name" {
   default     = ""
 }
 
-variable "ota_from_version" {
-  type        = string
-  description = "Source firmware version the dynamic group targets for upgrade."
-  default     = "1.0.2"
-}
-
-variable "alert_email" {
-  type    = string
-  default = "you@example.com"
-}
-
 variable "cpu_threshold" {
   type        = number
   description = "CPU alarm threshold (percent)."

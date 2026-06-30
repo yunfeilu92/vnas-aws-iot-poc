@@ -9,7 +9,7 @@ Provisions the OTA upgrade pipeline: device registration (shared certificate), D
 | `device.tf` | Shared certificate (no CA), ClientId policy, Things (per device) |
 | `indexing.tf` | Fleet Indexing (`REGISTRY_AND_SHADOW`) |
 | `ota.tf` | Firmware S3 bucket, Job IAM role, Dynamic Thing Group (CLI) |
-| `monitoring.tf` | Rule IAM role, topic rule, SNS, per-device CPU alarms |
+| `monitoring.tf` | Rule IAM role, topic rule, per-device CPU alarms (notification TBD) |
 | `custom_domain.tf` | **Optional** custom domain endpoint (off by default) |
 
 ## Prerequisites
@@ -25,13 +25,13 @@ terraform plan
 terraform apply
 ```
 
-After apply, confirm the SNS email subscription and trigger an upgrade with
-`device-client/create-ota-job.sh`.
+After apply, trigger an upgrade with `device-client/create-ota-job.sh <from> <to>`.
 
 ## Not managed by Terraform
 
-- **IoT Job** — one-shot operation, run `create-ota-job.sh`.
-- **Dynamic Thing Group** — no native provider resource (issue #28575); created via `null_resource` + CLI in `ota.tf`.
+- **IoT Job** — one-shot runtime operation, run `create-ota-job.sh <from> <to>`.
+- **Dynamic Thing Group** — runtime artifact (query condition changes per batch); created by `create-ota-job.sh`, not IaC.
+- **Alarm notification** — SNS→email vs Lambda is **TBD**; no SNS created, `alarm_actions` left empty.
 
 ## Optional: custom domain
 
