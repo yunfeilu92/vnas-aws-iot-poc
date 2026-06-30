@@ -4,7 +4,7 @@
 
 为 VNAS IoT PoC 项目创建一个 IAM User，具备以下权限：
 - **IAM 管理**：创建/管理 Role、Policy（用于 IoT Job 等服务角色）
-- **IoT OTA**：Job、Stream、Fleet Indexing、Code Signing
+- **IoT OTA**：Job、Stream、Fleet Indexing
 - **IoT Thing Group**：Static/Dynamic Thing Group 管理
 - **IoT Secure Tunneling**：设备远程隧道访问
 - **S3**：OTA 固件包存储
@@ -75,8 +75,7 @@ cat > /tmp/vnas-iot-policy.json << 'POLICY'
       "Condition": {
         "StringEquals": {
           "iam:PassedToService": [
-            "iot.amazonaws.com",
-            "signer.amazonaws.com"
+            "iot.amazonaws.com"
           ]
         }
       }
@@ -197,31 +196,14 @@ cat > /tmp/vnas-iot-policy.json << 'POLICY'
         "s3:DeleteBucket",
         "s3:ListBucket",
         "s3:GetBucketLocation",
-        "s3:GetBucketVersioning",
-        "s3:PutBucketVersioning",
         "s3:PutObject",
         "s3:GetObject",
-        "s3:DeleteObject",
-        "s3:GetObjectVersion"
+        "s3:DeleteObject"
       ],
       "Resource": [
         "arn:aws:s3:::${S3_BUCKET_NAME}",
         "arn:aws:s3:::${S3_BUCKET_NAME}/*"
       ]
-    },
-    {
-      "Sid": "CodeSigning",
-      "Effect": "Allow",
-      "Action": [
-        "signer:PutSigningProfile",
-        "signer:GetSigningProfile",
-        "signer:ListSigningProfiles",
-        "signer:StartSigningJob",
-        "signer:DescribeSigningJob",
-        "signer:ListSigningJobs",
-        "signer:CancelSigningProfile"
-      ],
-      "Resource": "*"
     },
     {
       "Sid": "CloudWatchLogs",
@@ -295,20 +277,19 @@ aws configure --profile vnas-iot
 
 | 权限模块 | 覆盖的操作 | 用途 |
 |---------|-----------|------|
-| IAM Management | CreateRole, CreatePolicy, PassRole 等 | 创建 IoT Job/Signer 所需的 Service Role |
+| IAM Management | CreateRole, CreatePolicy, PassRole 等 | 创建 IoT Job 所需的 Service Role |
 | IoT Core | Thing, Certificate, IoT Policy | 设备注册和认证管理 |
 | Thing Group | Static/Dynamic Group, Fleet Indexing | 按固件版本分组设备 |
 | OTA & Jobs | Job, OTAUpdate, Stream | 下发 OTA 升级任务 |
 | Secure Tunneling | OpenTunnel, CloseTunnel 等 | 远程调试设备 |
 | Device Shadow | Get/Update Shadow | 设备状态同步 |
 | S3 | 限定 bucket 范围 | 固件包存储 |
-| Code Signing | Signer Profile, Signing Job | 固件签名验证 |
 | CloudWatch | Log Group/Stream | 监控和日志查询 |
 
 ## 安全建议
 
 1. **最小权限原则**：IAM 权限中的 `Resource: "*"` 可进一步限定为具体 ARN（如 `arn:aws:iot:region:account:thinggroup/vnas-*`）
-2. **PassRole 限制**：已限定只能传递 `vnas-*` 前缀的 Role 给 IoT/Signer 服务
+2. **PassRole 限制**：已限定只能传递 `vnas-*` 前缀的 Role 给 IoT 服务
 3. **S3 限制**：已限定到具体 bucket
 4. **启用 MFA**：建议为该 User 启用 MFA
 5. **定期轮换 Access Key**：建议 90 天轮换一次

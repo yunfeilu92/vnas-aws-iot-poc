@@ -1,5 +1,11 @@
 # Register a Device (Thing) in AWS IoT Core
 
+> **Note:** This describes the standard per-device certificate flow (AWS-generated
+> cert, bound to a Thing via `attach-thing-principal`). This project uses a
+> **shared certificate** model instead — one cert registered without a CA, not
+> bound to any Thing, with ClientId-based topic isolation. See
+> `docs/iot-ota-setup-cli.md`. Kept here as a reference for the standard approach.
+
 ## 1. Create Thing
 
 ```bash

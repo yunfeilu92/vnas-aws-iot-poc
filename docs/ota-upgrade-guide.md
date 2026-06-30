@@ -202,7 +202,7 @@ aws iot list-things-in-thing-group --thing-group-name "firmware-v1-0-2"
 ## 6. Upload Firmware to S3
 
 ```bash
-aws s3 cp firmware-v1.1.0.bin "s3://${S3_BUCKET}/firmware/firmware-v1.1.0.bin"
+aws s3 cp firmware-v1.1.0.bin "s3://${S3_BUCKET}/firmware/v1.1.0/firmware.bin"
 ```
 
 ## 7. Create Job Document
