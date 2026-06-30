@@ -1,0 +1,12 @@
+# Terraform working dir & state
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Variable files may contain real values (account, email, domain)
+*.tfvars
+*.tfvars.json
+
+# Lock file is kept (commit .terraform.lock.hcl for reproducible providers)
